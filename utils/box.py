@@ -71,6 +71,7 @@ class box:
 
         # mlflow 实验设定
         mlflow.set_tracking_uri("http://localhost:5000")
+        # print()
         experiment = mlflow.get_experiment_by_name(args.exp_name)
         if experiment is None:
             swc = input("experiment {} not exists, create it? (y/n)".format(args.exp_name))

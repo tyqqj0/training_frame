@@ -89,7 +89,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=No
             )
         else:
             run_loss.update(loss.item(), n=args.batch_size)
-        box.update_in_epoch(out=logits, target=target, stage='train')
+        box.update_in_epoch(step=idx, out=logits, target=target, stage='train')
         # print(logits.shape, target.shape)
         # if not args.test:
         #     box.vis(epoch, args, data, logits, target)

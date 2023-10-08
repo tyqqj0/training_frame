@@ -1,4 +1,3 @@
-
 import argparse
 import os
 from functools import partial
@@ -37,7 +36,7 @@ parser.add_argument("--new_run_name", type=str, default=None, help="new run name
 parser.add_argument("--log_dir", type=str, default="./runs", help="log dir")
 # parser.add_argument("--artifact_dir", type=str, default="./artifacts", help="artifact dir")
 parser.add_argument("--tag_id", type=str, default=None, help="tag id, ***commanded to set***")
-parser.add_argument("--log_frq", type=int, default=10, help="log frequency")
+parser.add_argument("--log_frq", type=int, default=1, help="log frequency")
 parser.add_argument("--save_frq", type=int, default=10, help="save frequency, disabled in test and val")
 
 parser.add_argument("--user_name", type=str, default="tyqqj", help="user name")
@@ -47,7 +46,6 @@ parser.add_argument("--vis_2d", action="store_true", help="visualize 2d images")
 # 覆盖保存显示, 控制可视化是保留最新还是保留每个epoch
 parser.add_argument("--vis_2d_cover", action="store_true", help="visualize 2d images")
 parser.add_argument("--vis_3d_cover", action="store_true", help="visualize 3d images")
-
 
 run_parser = parser.add_argument_group('run')
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
@@ -141,6 +139,8 @@ def main():
     '''
     #
     args = parser.parse_args()
+    # 暂时更改的区域
+    args.val_every = args.log_frq
     args.amp = not args.noamp
     args.logdir = "./runs/" + args.logdir
     if args.save_to_test:
@@ -284,7 +284,7 @@ def main_worker(gpu, args):
         start_epoch=start_epoch,
         post_label=post_label,
         post_pred=post_pred,
-        box = logrbox
+        box=logrbox
     )
     if args.save_to_test:
         model.save(args)
