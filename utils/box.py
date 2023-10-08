@@ -187,7 +187,8 @@ class box:
             metrics_dict = self.evler.update(out, target, batch_size)
             # 记录和上传参数
             for metric, value in metrics_dict.items():
-                step = self.epoch + step * 1 / self.loader_len
+                # step = self.epoch + step * 1 / self.loader_len # 不能用浮点
+                step = self.epoch * self.loader_len + step
                 mlflow.log_metric(metric + '_in_epoch', value, step=step)
 
         # 如果当前阶段是验证（val）阶段，我们只需要计算和显示参数
