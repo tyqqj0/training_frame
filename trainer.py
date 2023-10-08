@@ -106,7 +106,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=No
         param.grad = None
     # 计算批次的平均值
     # len是idx的最大值，是数据数除以batch_size然后向上取整
-    box.end_epoch(model=model, epoch=epoch, stage='train')
+    box.end_epoch_log(model=model, loader=loader)
     # see_loss.print_avr()
     return run_loss.avg
 
@@ -234,8 +234,8 @@ def run_training(
                 "loss: {:.4f}".format(train_loss),
                 "time {:.2f}s".format(time.time() - epoch_time),
             )
-        if args.rank == 0 and box.writer is not None:
-            box.writer.add_scalar("train_loss", train_loss, epoch)
+        # if args.rank == 0 and box.writer is not None:
+        #     box.writer.add_scalar("train_loss", train_loss, epoch)
         b_new_best = False
 
         # if (epoch + 1) % args.vis_every == 0:

@@ -174,6 +174,7 @@ class box:
     # self.log(stage, epoch, input, output, target, loss, metric, use_vis)
 
     def update_in_epoch(self, out, target, batch_size=-1, stage="train"):
+        print("box updating")
         # 如果当前阶段是训练（train）阶段，我们需要进行参数更新
         if stage == "train":
             metrics_dict = self.evler.update(out, target, batch_size)

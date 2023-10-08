@@ -52,7 +52,7 @@ parser.add_argument("--vis_3d_cover", action="store_true", help="visualize 3d im
 run_parser = parser.add_argument_group('run')
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
 # parser.add_argument("--vis_dir", default="./runs/", type=str, help="dataset directory")
-# parser.add_argument("--logdir", default="test", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="test", type=str, help="directory to save the tensorboard logs")
 # parser.add_argument("--test", action="store_true", help="test mode")
 # loger参数
 # parser.add_argument("--box_root", default="./run", type=str, help="training box root")
