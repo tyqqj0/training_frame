@@ -170,7 +170,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             start_time = time.time()
     # if args.save_to_test:
     #     save_ckpt(model, epoch, args)
-    box.end_epoch(model=model, epoch=epoch, stage='val')
+    box.end_epoch_log(model=model, epoch=epoch, stage='val')
     return avg_acc
 
 
@@ -257,6 +257,7 @@ def run_training(
                 args=args,
                 post_label=post_label,
                 post_pred=post_pred,
+                box=box
             )
             if args.rank == 0:
                 print(

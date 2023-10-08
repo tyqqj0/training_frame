@@ -43,6 +43,7 @@ from monai import __version__
 
 class box:
     def __init__(self, args):
+        self.loader_len = None
         self.epoch = None
         self.use_vis = None
         self.rank = 0
@@ -146,6 +147,11 @@ class box:
             if self.args.test or (stage is 'val'):
                 self.use_vis = True
         self.evler = utils.evl.evl(loader, epoch)
+        # 计算loader长度
+        len = 0
+        for i, data in enumerate(loader):
+            len += 1
+        self.loader_len = len
         # if use_vis:
         #     self.writer = SummaryWriter(os.path.join(self.artifact_location, self.run.info.run_id, "log", stage))
 
@@ -173,14 +179,15 @@ class box:
     # 保存
     # self.log(stage, epoch, input, output, target, loss, metric, use_vis)
 
-    def update_in_epoch(self, out, target, batch_size=-1, stage="train"):
+    def update_in_epoch(self, step, out, target, batch_size=-1, stage="train"):
         print("box updating")
         # 如果当前阶段是训练（train）阶段，我们需要进行参数更新
         if stage == "train":
             metrics_dict = self.evler.update(out, target, batch_size)
             # 记录和上传参数
             for metric, value in metrics_dict.items():
-                mlflow.log_metric(metric + '_in_epoch', value, step=self.epoch)
+                step = self.epoch + step * 1 / self.loader_len
+                mlflow.log_metric(metric + '_in_epoch', value, step=step)
 
         # 如果当前阶段是验证（val）阶段，我们只需要计算和显示参数
         elif stage == "val":
