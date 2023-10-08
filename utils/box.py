@@ -19,6 +19,9 @@ import mlflow.pytorch
 from tensorboardX import SummaryWriter
 from monai import __version__
 
+from torch.cuda.amp import GradScaler, autocast
+from functools import partial
+
 # 用来规范化保存，日志，可视化等路径
 '''
 :param args: 参数
@@ -61,6 +64,14 @@ class box:
         self.vis_3d_cache_loc = './run_cache/vis_3d'
         self.vis_2d_cover = args.vis_2d_cover
         self.vis_3d_cover = args.vis_3d_cover
+
+        model_inferer = partial(
+            sliding_window_inference,
+            roi_size=inf_size,
+            sw_batch_size=args.sw_batch_size,
+            predictor=model,
+            overlap=args.infer_overlap,
+        )
 
         # 实验模式检查
         if args.train and args.test:
@@ -229,7 +240,12 @@ class box:
                     else:
                         data, target = first_batch["image"], first_batch["label"]
                     data, target = data.cuda(self.rank), target.cuda(self.rank)
-                    logits = model(data)
+                    with autocast(enabled=self.args.amp):
+                        if self.model_inferer is not None and data.shape[-1] != 96:  # TODO: 这里是干啥的
+                            logits = self.model_inferer(data)
+                        else:
+                            logits = model(data)
+                    # logits = model(data)
                     if not logits.is_cuda:
                         target = target.cpu()
                 # 可视化
