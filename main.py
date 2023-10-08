@@ -10,6 +10,7 @@ import os
 
 from mlflow.entities import Experiment
 # from functools import partial
+from utils import box
 
 from monai.losses import DiceCELoss, DiceLoss
 from monai.metrics import DiceMetric
@@ -44,6 +45,7 @@ parser = argparse.ArgumentParser(description="monai training arguments")
 # parser.add_argument("--test", action="store_true", help="test mode")
 
 # mlflow 基础参数
+mlflow_parser = parser.add_argument_group('mlflow')
 parser.add_argument("-n", "--exp_name", type=str, default=None, help="experiment name, ***must be set***")
 parser.add_argument("-i", "--run_id", type=str, default=None,
                     help="run id, ***must be set when test or is_continue, only for continue training***")
@@ -55,11 +57,18 @@ parser.add_argument("--log_dir", type=str, default="./runs", help="log dir")
 # parser.add_argument("--artifact_dir", type=str, default="./artifacts", help="artifact dir")
 parser.add_argument("--tag_id", type=str, default=None, help="tag id, ***commanded to set***")
 parser.add_argument("--log_frq", type=int, default=10, help="log frequency")
-parser.add_argument("--save_frq", type=int, default=10, help="save frequency")
+parser.add_argument("--save_frq", type=int, default=10, help="save frequency, disabled in test and val")
 
 parser.add_argument("--user_name", type=str, default="tyqqj", help="user name")
 
+parser.add_argument("--vis_3d", action="store_true", help="visualize 3d images")
+parser.add_argument("--vis_2d", action="store_true", help="visualize 2d images")
+# 覆盖保存显示, 控制可视化是保留最新还是保留每个epoch
+parser.add_argument("--vis_2d_cover", action="store_true", help="visualize 2d images")
+parser.add_argument("--vis_3d_cover", action="store_true", help="visualize 3d images")
+
 # 运行使用参数
+run_parser = parser.add_argument_group('run')
 parser.add_argument("--max_epochs", type=int, default=100, help="number of maximum epochs")
 parser.add_argument("--batch_size", type=int, default=2, help="batch size")
 
@@ -68,20 +77,8 @@ args = parser.parse_args()
 
 
 def main_worker(args):
-    # 出示服务器
-    print("mlflow server: ", mlflow.get_tracking_uri())
-    # 模拟参数
-    run_name = None
-    if args.new_run_name != None:
-        run_name = args.exp_name + '-' + args.new_run_name
-    with mlflow.start_run(run_id=args.run_id, run_name=run_name) as run:  # as的作用是将run的值赋给run_id
-        mlflow.set_tag("mlflow.user", args.user_name)
-        mlflow.set_tag("mlflow.note.content", "test" if args.test else "train")
-        mlflow.set_tag("mlflow.note.run_id", args.run_id if args.run_id != None else run.info.run_id)
-        # mlflow 参数
-        mlflow.log_param("monai_version", __version__)
-        for k, v in vars(args).items():
-            mlflow.log_param(k, v)
+
+    with run_box as run:
 
         for i in range(args.max_epochs):
             if i % args.log_frq == 0:
@@ -105,11 +102,7 @@ def main_worker(args):
         mlflow.log_param("epochs", args.max_epochs)
         mlflow.log_param("batch_size", args.batch_size)
 
-    # 记录最后运行run_id
-    mlflow.log_param("last_run_id", run.info.run_id)
-    # 出示服务器
-    print("run {} finished".format(run.info.run_name))
-    print("mlflow server: ", mlflow.get_tracking_uri())
+
 
 
 # mlflow.log_param("epochs", args.epochs)
@@ -117,48 +110,6 @@ def main_worker(args):
 if __name__ == "__main__":
     # 解析参数
     args = parser.parse_args()
-
-    # 实验模式检查
-    if args.train and args.test:
-        raise ValueError("Cannot set both train and test to True")
-
-    if args.is_continue and not args.train:
-        raise ValueError("Cannot set is_continue to True when train is False")
-
-    # mlflow 实验设定
-    mlflow.set_tracking_uri("http://localhost:5000")
-    experiment = mlflow.get_experiment_by_name(args.exp_name)
-    if experiment is None:
-        print("create experiment: ", args.exp_name)
-        mlflow.create_experiment(name=args.exp_name, tags={"mlflow.user": args.user_name, "type": "run_test"})
-    else:
-        print("use experiment: ", args.exp_name)
-        # print(experiment)
-        print("experiment id: ", experiment.experiment_id)
-        print("artifact location: ", experiment.artifact_location)
-
-    mlflow.set_experiment(args.exp_name)
-    # 检查实验的状况
-    # experiment = mlflow.get_experiment_by_name(args.exp_name)
-    # print(experiment)
-    # mlflow 运行设置参数
-    # 默认继续的运行
-    if args.is_continue and args.run_id is None:
-        runs = mlflow.search_runs(order_by=["attribute.start_time DESC"], max_results=1)
-        if runs.empty:
-            raise ValueError("no run exists, please check if the experiment name is correct or muti-user conflict on",
-                             mlflow.get_tracking_uri())  # 遇到了开多个不同源的mlflow server的问题，会在不同地方创建同名的实验
-        # print(runs)
-        last_run_id = runs.loc[0, "run_id"]
-        # print(runs)
-        print("using last run id: {}, name: {}".format(last_run_id, runs.loc[0, "tags.mlflow.runName"]))
-        if last_run_id is None:
-            # raise ValueError("Cannot set is_continue to True when name is None")
-            raise ValueError("Cannot find last run id")
-        args.run_id = last_run_id
-
-    if args.test and args.run_id is None:
-        raise ValueError("Cannot set test to True when name is None")
-
+    run_box = box.box(args)
     # mlflow 实验运行
     main_worker(args)

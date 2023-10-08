@@ -6,15 +6,18 @@
 # @Aim
 
 import os
+import shutil
 import time
 
 import utils.vis
+import utils.evl
 
 import numpy as np
 import torch
 import mlflow
 import mlflow.pytorch
 from tensorboardX import SummaryWriter
+from monai import __version__
 
 # 用来规范化保存，日志，可视化等路径
 '''
@@ -24,134 +27,244 @@ from tensorboardX import SummaryWriter
 '''
 
 
+def save_checkpoint(net, optimizer, epoch, loss, metric):
+    """
+    两种保存方式，一种是直接保存模型，一种是保存参数
+    优先第一种，当第一种不可用时使用第二种，并且第二种会提示询问模型代码
+    :param net:
+    :param optimizer:
+    :param epoch:
+    :param loss:
+    :param metric:
+    :return:
+    """
+    pass
+
+
 class box:
-    def __init__(self, args, name='train', mkdir=True, custom_root=None, name_add_time=True, name_add_date=True):
+    def __init__(self, args):
+        self.rank = 0
+        self.epoch_stage = None
+        self.evler = None
         self.args = args
-        self.mkdir = mkdir
-        self.get_root_path(custom_root)  # 获取根目录
-        self.name_add_time = name_add_time
-        self.name_add_date = name_add_date
-        self.name = self.gen_name(name)
-        self.iscontinue = False
-        self.paths = self.gen_box()
-        self.model_name = "model.pt"
-        self.test_mode = self.test
-        self.best_acc = 0
-        if args.logdir is not None and args.rank == 0:
-            self.writer = SummaryWriter(log_dir=args.paths['vis_score'])
-            if args.rank == 0:
-                print("Writing Tensorboard logs to ", args.paths['vis_score'])
+        self.run = None
+        self.artifact_location = None
+        self.vis_3d = args.vis_3d
+        self.vis_2d = args.vis_2d
+        self.log_frq = args.log_frq
+        self.save_frq = args.save_frq
+        self.vis_2d_slice_loc = 96 / 2
+        self.vis_2d_cache_loc = './run_cache/vis_2d'
+        self.vis_3d_cache_loc = './run_cache/vis_3d'
+        self.vis_2d_cover = args.vis_2d_cover
+        self.vis_3d_cover = args.vis_3d_cover
 
-        # 如果iscontinue为True，判断checkpoint是否为真，如果为假，报错
-        if self.iscontinue:
-            if not self.args.checkpoint:
-                raise RuntimeError("model exists, but checkpoint is False")
+        # 实验模式检查
+        if args.train and args.test:
+            raise ValueError("Cannot set both train and test to True")
 
-    def get_root_path(self, custom_root=None):
-        # 获取路径
+        if args.is_continue and not args.train:
+            raise ValueError("Cannot set is_continue to True when train is False")
 
-        # 当没有自定义保存子目录时，如果是测试模式，则为root/test，否则为root/train
-        # 若无根目录，报错
-        if not os.path.exists(self.args.box_root):
-            raise RuntimeError("box_root does not exist")
-
-        if custom_root is None:
-            if self.args.test:
-                self.root = os.path.join(self.args.box_root, 'test')
+        # mlflow 实验设定
+        mlflow.set_tracking_uri("http://localhost:5000")
+        experiment = mlflow.get_experiment_by_name(args.exp_name)
+        if experiment is None:
+            swc = input("experiment {} not exists, create it? (y/n)".format(args.exp_name))
+            if swc == "y":
+                print("create experiment: ", args.exp_name)
+                mlflow.create_experiment(name=args.exp_name, tags={"mlflow.user": args.user_name, "type": "run_test"})
             else:
-                self.root = os.path.join(self.args.box_root, 'train')
-        else:
-            self.root = os.path.join(self.args.box_root, custom_root)
-        # # 如果名称是默认的，就存在root/default
-        # if self.name == 'train':
-        #     self.root = os.path.join(self.root, 'default')
-        # 如果根目录不存在，创建根目录
-        if not os.path.exists(self.root):
-            if (self.mkdir):
-                os.makedirs(self.root)
+                raise ValueError("experiment {} not exists".format(args.exp_name))
+
+        mlflow.set_experiment(args.exp_name)
+        # 检查当前的实验
+        # 输出实验的信息
+        print("use experiment: ", args.exp_name)
+        # print(experiment)
+        print("experiment id: ", experiment.experiment_id)
+        print("artifact location: ", experiment.artifact_location)
+
+        # 检查实验的状况
+        # experiment = mlflow.get_experiment_by_name(args.exp_name)
+        # print(experiment)
+        # mlflow 运行设置参数
+        # 默认继续的运行
+        if args.is_continue and args.run_id is None:
+            # 尝试获取最后一个运行的id
+            runs = mlflow.search_runs(order_by=["attribute.start_time DESC"], max_results=1)
+            if runs.empty:
+                raise ValueError(
+                    "no run exists, please check if the experiment name is correct or muti-user conflict on",
+                    mlflow.get_tracking_uri())  # 遇到了开多个不同源的mlflow server的问题，会在不同地方创建同名的实验
+            # print(runs)
+            last_run_id = runs.loc[0, "run_id"]
+            # print(runs)
+            print("using last run id: {}, name: {}".format(last_run_id, runs.loc[0, "tags.mlflow.runName"]))
+            if last_run_id is None:
+                # raise ValueError("Cannot set is_continue to True when name is None")
+                raise ValueError("Cannot find last run id")
+            args.run_id = last_run_id
+
+        if args.test and args.run_id is None:
+            # 询问是否使用最后一个运行的id
+            swc = input("run_id is None, use last run id? (y/n)")
+            if swc == "y":
+                runs = mlflow.search_runs(order_by=["attribute.start_time DESC"], max_results=1)
+                if runs.empty:
+                    raise ValueError(
+                        "no run exists, please check if the experiment name is correct or muti-user conflict on",
+                        mlflow.get_tracking_uri())
+                last_run_id = runs.loc[0, "run_id"]
+                print("using last run id: {}, name: {}".format(last_run_id, runs.loc[0, "tags.mlflow.runName"]))
+                if last_run_id is None:
+                    raise ValueError("Cannot set is_continue to True when name is None")
+                args.run_id = last_run_id
             else:
-                raise RuntimeError("root space does not exist")
-        # self.root = args.box_root
-        return self.root
+                # raise ValueError("Cannot set test to True when run_id is None")
+                raise ValueError("Cannot set test to True when name is None")
 
-    def gen_box(self):
-        # 生成box，如果box存在，就返回box，否则创建box
-        '''
-        box结构:
-        root/name
-                /model
-                /log
-                    /vis_score
-                    /vis2d
-                    /vismha
-        :return:
-        '''
-        box_path = os.path.join(self.root, self.name)
-        model_path = os.path.join(box_path, "model")
-        log_path = os.path.join(box_path, "log")
+        # 置入内部参数
+        self.artifact_location = experiment.artifact_location
 
-        vis_score_path = os.path.join(log_path, "vis_score")
-        vis2d_path = os.path.join(log_path, "vis2d")
-        vismha_path = os.path.join(log_path, "vismha")
+    # 内部函数 标准化标签
+    def _normalize_tag(self, tag=None):
+        mlflow.set_tag("mlflow.user", self.args.user_name)
+        mlflow.set_tag("mlflow.note.content", "test" if self.args.test else "train")
+        mlflow.set_tag("mlflow.note.run_id", self.args.run_id if self.args.run_id is not None else self.run.info.run_id)
+        # mlflow 参数
+        mlflow.log_param("monai_version", __version__)
+        for k, v in vars(self.args).items():
+            mlflow.log_param(k, v)
 
-        paths = [model_path, vis_score_path, vis2d_path, vismha_path]
+    def start_epoch(self, loader, stage, epoch, use_vis=None):
+        self.epoch_stage = stage
+        if use_vis is None:
+            if self.args.test or (stage is 'val'):
+                self.use_vis = True
+        self.evler = utils.evl.evl(loader, epoch)
+        # if use_vis:
+        #     self.writer = SummaryWriter(os.path.join(self.artifact_location, self.run.info.run_id, "log", stage))
 
-        for path in paths:
-            if not os.path.exists(path):
-                if self.mkdir:
-                    os.makedirs(path)
+        # self.evler = utils.evl.evl(loader, epoch)
+
+        # 清空并创建文件夹
+        for dirpath in [self.vis_2d_cache_loc, self.vis_3d_cache_loc]:
+            if os.path.exists(dirpath):
+                for filename in os.listdir(dirpath):
+                    filepath = os.path.join(dirpath, filename)
+                    if os.path.isfile(filepath):
+                        os.remove(filepath)
+                    elif os.path.isdir(filepath):
+                        shutil.rmtree(filepath)
+            else:
+                os.makedirs(dirpath)
+    # 参数
+    # 计算参数列表,获取参数
+    # self._normalize_tag()
+    # self._normalize_tag(stage)
+    # self._normalize_tag(epoch)
+    # self._normalize_tag(use_vis)
+
+    # 保存
+    # self.log(stage, epoch, input, output, target, loss, metric, use_vis)
+
+
+def update_in_epoch(self, out, target, batch_size=-1, stage="train"):
+    # 如果当前阶段是训练（train）阶段，我们需要进行参数更新
+    if stage == "train":
+        metrics_dict = self.evler.update(out, target, batch_size)
+        # 记录和上传参数
+        for metric, value in metrics_dict.items():
+            mlflow.log_metric(metric + '_in_epoch', value, step=self.epoch)
+
+    # 如果当前阶段是验证（val）阶段，我们只需要计算和显示参数
+    elif stage == "val":
+        # with torch.no_grad():
+        metrics_dict = self.evler.update(out, target, batch_size)
+        # 记录和上传参数, val阶段不需要上传参数
+        # for metric, value in metrics_dict.items():
+        #     mlflow.log_metric(metric, value, step=self.epoch)
+
+    else:
+        # test目前打算不在这里做
+        print("Invalid stage")
+        raise ValueError
+
+
+# 保存
+def end_epoch_log(self, model, last_batch, epoch):
+    # if use_vis is None:
+    #     if self.args.test or (stage is 'val'):
+    #         use_vis = True
+
+    # 参数
+    # 计算参数列表,获取参数
+    metrics_dict = self.evler.end_epoch()
+    for metric, value in metrics_dict.items():
+        mlflow.log_metric(metric + '_' + self.epoch_stage, value, step=epoch)
+
+    if self.log_frq is not None and self.use_vis:
+        if epoch % self.log_frq == 0:
+            # 测试一次运行的
+            with torch.no_grad():
+                if isinstance(last_batch, list):
+                    data, target = last_batch
                 else:
-                    raise RuntimeError("path {} does not exist".format(path))
+                    data, target = last_batch["image"], last_batch["label"]
+                data, target = data.cuda(self.rank), target.cuda(self.rank)
+                logits = model(data)
+                if not logits.is_cuda:
+                    target = target.cpu()
+            # 可视化
+            if self.vis_2d:
+                utils.vis.vis_2d(self.vis_2d_cache_loc, epoch, image=data, outputs=logits, label=target,
+                                 add_text='_' + self.epoch_stage, rank=self.rank)
+                # 检查缓存位置是否存在
+                if not os.path.exists(self.vis_2d_cache_loc):
+                    raise ValueError("vis_2d_cache_loc not exists")
+                # 找到缓存的文件，并且上传到mlflow上面
+                for filename in os.listdir(self.vis_2d_cache_loc):
+                    filepath = os.path.join(self.vis_2d_cache_loc, filename)
+                    if os.path.isfile(filepath):
+                        mlflow.log_artifact(filepath, artifact_path="vis_2d/")
 
-        # model_file_path = os.path.join(model_path, "model.pt")
-        model_file_path = os.path.join(model_path, self.model_name)
+            if self.vis_3d:
+                utils.vis.vis_mha(self.vis_3d_cache_loc, epoch, image=data, outputs=logits, label=target,
+                                  add_text='_' + self.epoch_stage, rank=self.rank)
+                # 检查缓存位置是否存在
+                if not os.path.exists(self.vis_3d_cache_loc):
+                    raise ValueError("vis_3d_cache_loc not exists")
+                # 找到缓存的文件夹，并且上传到mlflow上面
+                for filename in os.listdir(self.vis_3d_cache_loc):
+                    filepath = os.path.join(self.vis_3d_cache_loc, filename)  # 应该是一个文件夹
+                    # 检查是否是文件夹
+                    if os.path.isdir(filepath):
+                        mlflow.log_artifacts(filepath, artifact_path="vis_3d/" + filename)
+                    # if os.path.isfile(filepath):
+                    #     mlflow.log_artifacts(filepath, artifact_path="vis_3d/")
 
-        if os.path.exists(model_file_path):
-            self.iscontinue = True
-        paths = {"box": box_path, "model": model_path, "log": log_path, "vis_score": vis_score_path,
-                 "vis2d": vis2d_path, "vismha": vismha_path, "model_file": model_file_path}
-        return paths
 
-    def gen_name(self, sname):
-        # 生成文件名，   yy.mm.dd/hh:mm_name(n)
-        name = ''
-        if self.name_add_date:
-            name += time.strftime("%Y.%m.%d", time.localtime())
-        if self.name_add_time:
-            name += time.strftime("/%H:%M", time.localtime())
-        if name != '':
-            name += '_'
-        name += sname
-        # 如果已经存在，就在后面加上(n)
-        if os.path.exists(os.path.join(self.root, name)):
-            n = 1
-            while os.path.exists(os.path.join(self.root, name + '(' + str(n) + ')')):
-                n += 1
-            name += '(' + str(n) + ')'
-        return name
+def __enter__(self):
+    # global args
+    # 出示服务器
+    print("mlflow server: ", mlflow.get_tracking_uri())
+    self._normalize_tag()
+    # 模拟参数
+    run_name = None
+    if self.args.new_run_name is not None:
+        run_name = self.args.exp_name + '-' + self.args.new_run_name
+    # run_id是用来指定运行的，run_name是用来新建的，都可以没有但是功能不共用
+    self.run = mlflow.start_run(run_id=self.args.run_id, run_name=run_name)
 
-    def save_model(self, model, epoch, args, filename=None, best_acc=0, optimizer=None, scheduler=None):
-        if filename is None:
-            filename = self.model_name
-        state_dict = model.state_dict() if not args.distributed else model.module.state_dict()
-        save_dict = {"epoch": epoch, "best_acc": best_acc, "state_dict": state_dict}
-        if optimizer is not None:
-            save_dict["optimizer"] = optimizer.state_dict()
-        if scheduler is not None:
-            save_dict["scheduler"] = scheduler.state_dict()
-        filename = os.path.join(self.paths['model'], filename)
-        torch.save(save_dict, filename)
-        print("Saving checkpoint ", filename)
+    return self.run
 
-    def vis(self, epoch, image, outputs, label=None, add_text=''):
-        if (self.args.vis):
-            if (self.args.vis_every > 0 and (epoch + 1) % self.args.vis_every == 0):
-                # print("out")
-                utils.vis.vis(self.paths['vis2d'], epoch, image, outputs, label, self.test_mode, add_text=add_text)
-        if (self.args.vis3d):
-            if (self.args.vis3d_every > 0 and (epoch + 1) % self.args.vis3d_every == 0):
-                # print("out")
-                utils.vis.vis3d(self.paths['vismha'], epoch, image, outputs, label, self.test_mode, add_text=add_text)
 
-    def vis_score(self, loss, epoch):
-        pass
+def __exit__(self, exc_type, exc_val, exc_tb):
+    # save_checkpoint()
+    # 记录最后运行run_id
+    mlflow.log_param("last_run_id", self.run.info.run_id)
+    # 出示服务器
+    print("run {} finished".format(self.run.info.run_name))
+    print("mlflow server: ", mlflow.get_tracking_uri())
+    return mlflow.end_run()
