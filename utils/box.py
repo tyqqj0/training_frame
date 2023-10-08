@@ -6,6 +6,7 @@
 # @Aim
 
 import os
+import re
 import shutil
 import time
 
@@ -21,6 +22,7 @@ from monai import __version__
 
 from torch.cuda.amp import GradScaler, autocast
 from functools import partial
+from monai.inferers import sliding_window_inference
 
 # 用来规范化保存，日志，可视化等路径
 '''
@@ -45,7 +47,7 @@ from functools import partial
 
 
 class box:
-    def __init__(self, args):
+    def __init__(self, args, model):
         self.loader_len = None
         self.epoch = None
         self.use_vis = None
@@ -65,7 +67,8 @@ class box:
         self.vis_2d_cover = args.vis_2d_cover
         self.vis_3d_cover = args.vis_3d_cover
 
-        model_inferer = partial(
+        inf_size = [args.roi_x, args.roi_y, args.roi_z]
+        self.model_inferer = partial(
             sliding_window_inference,
             roi_size=inf_size,
             sw_batch_size=args.sw_batch_size,
@@ -240,18 +243,21 @@ class box:
                     else:
                         data, target = first_batch["image"], first_batch["label"]
                     data, target = data.cuda(self.rank), target.cuda(self.rank)
+                    # print(data.shape)
                     with autocast(enabled=self.args.amp):
                         if self.model_inferer is not None and data.shape[-1] != 96:  # TODO: 这里是干啥的
                             logits = self.model_inferer(data)
                         else:
                             logits = model(data)
                     # logits = model(data)
+
+                    # logits = model(data)
                     if not logits.is_cuda:
                         target = target.cpu()
                 # 可视化
                 if self.vis_2d:
                     utils.vis.vis(self.vis_2d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
-                                  add_text='_' + self.epoch_stage, rank=self.rank)
+                                  add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
                     if not os.path.exists(self.vis_2d_cache_loc):
                         raise ValueError("vis_2d_cache_loc not exists")
@@ -259,11 +265,11 @@ class box:
                     for filename in os.listdir(self.vis_2d_cache_loc):
                         filepath = os.path.join(self.vis_2d_cache_loc, filename)
                         if os.path.isfile(filepath):
-                            mlflow.log_artifact(filepath, artifact_path="vis_2d/")
+                            mlflow.log_artifact(filepath, artifact_path="vis_2d")
 
                 if self.vis_3d:
                     utils.vis.vis_mha(self.vis_3d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
-                                      add_text='_' + self.epoch_stage, rank=self.rank)
+                                      add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
                     if not os.path.exists(self.vis_3d_cache_loc):
                         raise ValueError("vis_3d_cache_loc not exists")
@@ -275,6 +281,34 @@ class box:
                             mlflow.log_artifacts(filepath, artifact_path="vis_3d/" + filename)
                         # if os.path.isfile(filepath):
                         #     mlflow.log_artifacts(filepath, artifact_path="vis_3d/")
+
+    def save_model(self, model, epoch, args, filename=None, best_acc=0, optimizer=None, scheduler=None):
+        if filename is None:
+            filename = 'model.pt'
+        state_dict = model.state_dict() if not args.distributed else model.module.state_dict()
+        save_dict = {"epoch": epoch, "best_acc": best_acc, "state_dict": state_dict}
+        if optimizer is not None:
+            save_dict["optimizer"] = optimizer.state_dict()
+        if scheduler is not None:
+            save_dict["scheduler"] = scheduler.state_dict()
+
+        # 假设 self.artifact_location 是 'mlflow-artifacts:/243272572310566340'
+        location = self.artifact_location
+
+        # 使用正则表达式从artifact_location中获取最后的数字
+        match = re.search(r'/(\d+)$', location)
+        if match is not None:
+            number = match.group(1)
+        else:
+            raise ValueError("No number found in artifact location")
+
+        # 附加到'.art/model'路径中，并在数字前后添加'.'
+        new_path = os.path.join('./mlruns', number, 'models')  # mlruns文件夹下不能随便有model
+        filename = os.path.join(new_path, filename)
+        if not os.path.exists(new_path):
+            os.mkdir(new_path)
+        torch.save(save_dict, filename)
+        print("Saving checkpoint ", filename)
 
     def __enter__(self):
         # global args

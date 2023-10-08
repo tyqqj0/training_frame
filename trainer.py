@@ -145,7 +145,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             # if args.test:
             # 可视化
             # box.vis(epoch, args, data, logits, target, add_text='val')
-            box.update_in_epoch(out=logits, target=target, stage='val')
+            box.update_in_epoch(step=idx, out=logits, target=target, stage='val')
 
             acc = acc_func(y_pred=val_output_convert, y=val_labels_convert)
             acc = acc.cuda(args.rank)
@@ -170,7 +170,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             start_time = time.time()
     # if args.save_to_test:
     #     save_ckpt(model, epoch, args)
-    box.end_epoch_log(model=model, epoch=epoch, stage='val')
+    box.end_epoch_log(model=model, loader=loader)
     return avg_acc
 
 
@@ -266,8 +266,8 @@ def run_training(
                     val_avg_acc,
                     "time {:.2f}s".format(time.time() - epoch_time),
                 )
-                if box.writer is not None:
-                    box.writer.add_scalar("val_acc", val_avg_acc, epoch)
+                # if box.writer is not None:
+                #     box.writer.add_scalar("val_acc", val_avg_acc, epoch)
                 if val_avg_acc > val_acc_max:
                     print("new best ({:.6f} --> {:.6f}). ".format(val_acc_max, val_avg_acc))
                     val_acc_max = val_avg_acc
@@ -281,9 +281,9 @@ def run_training(
             if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
                 # save_checkpoint(model, epoch, args, best_acc=val_acc_max, filename="model_final.pt")
                 box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer, filename="model_final.pt")
-                if b_new_best:
-                    print("Copying to model.pt new best model!!!!")
-                    shutil.copyfile(os.path.join(args.logdir, "model_final.pt"), os.path.join(args.logdir, "model.pt"))
+                # if b_new_best:
+                #     print("Copying to model.pt new best model!!!!")
+                #     shutil.copyfile(os.path.join(args.logdir, "model_final.pt"), os.path.join(args.logdir, "model.pt"))
 
         if scheduler is not None:
             scheduler.step()
