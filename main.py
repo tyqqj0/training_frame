@@ -10,7 +10,7 @@ import os
 
 from mlflow.entities import Experiment
 # from functools import partial
-from utils import box
+import utils.box as box
 
 from monai.losses import DiceCELoss, DiceLoss
 from monai.metrics import DiceMetric
@@ -77,32 +77,27 @@ args = parser.parse_args()
 
 
 def main_worker(args):
-
     with run_box as run:
 
         for i in range(args.max_epochs):
-            if i % args.log_frq == 0:
-                mlflow.log_metric("loss", i * 0.1, step=i)
-                mlflow.log_metric("acc", i * 0.2, step=i)
-                mlflow.log_metric("auc", i * 0.3, step=i)
-                mlflow.log_metric("f1", i * 0.4, step=i)
-                mlflow.log_metric("recall", i * 0.5, step=i)
-                mlflow.log_metric("precision", i * 0.6, step=i)
-                mlflow.log_metric("specificity", i * 0.7, step=i)
-                mlflow.log_metric("sensitivity", i * 0.8, step=i)
-                mlflow.log_metric("dice", i * 0.9, step=i)
-                mlflow.log_metric("iou", i * 1.0, step=i)
+            loader = []
+            run_box.start_epoch(loader, 'train', i)
+            for j in range(len(loader)):
+                out = None
+                target = None
+                run_box.update_in_epoch(out, target)
                 # 保存artifacts
                 # mlflow.log_artifact("artifacts.txt")
                 # 保存模型
             # if i % args.save_frq == 0:
             # model = UNet()
             # mlflow.pytorch.log_model(model, "models")
-        # 保存模型参数
+            # 保存模型参数
+            model = None
+            last_batch = None
+            run_box.end_epoch_log(model, last_batch, i)
         mlflow.log_param("epochs", args.max_epochs)
         mlflow.log_param("batch_size", args.batch_size)
-
-
 
 
 # mlflow.log_param("epochs", args.epochs)

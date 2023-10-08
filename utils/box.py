@@ -27,22 +27,24 @@ from monai import __version__
 '''
 
 
-def save_checkpoint(net, optimizer, epoch, loss, metric):
-    """
-    两种保存方式，一种是直接保存模型，一种是保存参数
-    优先第一种，当第一种不可用时使用第二种，并且第二种会提示询问模型代码
-    :param net:
-    :param optimizer:
-    :param epoch:
-    :param loss:
-    :param metric:
-    :return:
-    """
-    pass
+# def save_checkpoint(net, optimizer, epoch, loss, metric):
+#     """
+#     两种保存方式，一种是直接保存模型，一种是保存参数
+#     优先第一种，当第一种不可用时使用第二种，并且第二种会提示询问模型代码
+#     :param net:
+#     :param optimizer:
+#     :param epoch:
+#     :param loss:
+#     :param metric:
+#     :return:
+#     """
+#     pass
 
 
 class box:
     def __init__(self, args):
+        self.epoch = None
+        self.use_vis = None
         self.rank = 0
         self.epoch_stage = None
         self.evler = None
@@ -138,6 +140,7 @@ class box:
             mlflow.log_param(k, v)
 
     def start_epoch(self, loader, stage, epoch, use_vis=None):
+        self.epoch = epoch
         self.epoch_stage = stage
         if use_vis is None:
             if self.args.test or (stage is 'val'):
@@ -159,6 +162,7 @@ class box:
                         shutil.rmtree(filepath)
             else:
                 os.makedirs(dirpath)
+
     # 参数
     # 计算参数列表,获取参数
     # self._normalize_tag()
@@ -169,102 +173,102 @@ class box:
     # 保存
     # self.log(stage, epoch, input, output, target, loss, metric, use_vis)
 
+    def update_in_epoch(self, out, target, batch_size=-1, stage="train"):
+        # 如果当前阶段是训练（train）阶段，我们需要进行参数更新
+        if stage == "train":
+            metrics_dict = self.evler.update(out, target, batch_size)
+            # 记录和上传参数
+            for metric, value in metrics_dict.items():
+                mlflow.log_metric(metric + '_in_epoch', value, step=self.epoch)
 
-def update_in_epoch(self, out, target, batch_size=-1, stage="train"):
-    # 如果当前阶段是训练（train）阶段，我们需要进行参数更新
-    if stage == "train":
-        metrics_dict = self.evler.update(out, target, batch_size)
-        # 记录和上传参数
+        # 如果当前阶段是验证（val）阶段，我们只需要计算和显示参数
+        elif stage == "val":
+            # with torch.no_grad():
+            metrics_dict = self.evler.update(out, target, batch_size)
+            # 记录和上传参数, val阶段不需要上传参数
+            # for metric, value in metrics_dict.items():
+            #     mlflow.log_metric(metric, value, step=self.epoch)
+
+        else:
+            # test目前打算不在这里做
+            print("Invalid stage")
+            raise ValueError
+
+    # 保存
+    def end_epoch_log(self, model, loader):
+        # if use_vis is None:
+        #     if self.args.test or (stage is 'val'):
+        #         use_vis = True
+        # 获取first_batch
+        first_batch = None
+        for i, data in enumerate(loader):
+            first_batch = data
+            break
+        # 参数
+        # 计算参数列表,获取参数
+        metrics_dict = self.evler.end_epoch()
         for metric, value in metrics_dict.items():
-            mlflow.log_metric(metric + '_in_epoch', value, step=self.epoch)
+            mlflow.log_metric(metric + '_' + self.epoch_stage, value, step=self.epoch)
 
-    # 如果当前阶段是验证（val）阶段，我们只需要计算和显示参数
-    elif stage == "val":
-        # with torch.no_grad():
-        metrics_dict = self.evler.update(out, target, batch_size)
-        # 记录和上传参数, val阶段不需要上传参数
-        # for metric, value in metrics_dict.items():
-        #     mlflow.log_metric(metric, value, step=self.epoch)
-
-    else:
-        # test目前打算不在这里做
-        print("Invalid stage")
-        raise ValueError
-
-
-# 保存
-def end_epoch_log(self, model, last_batch, epoch):
-    # if use_vis is None:
-    #     if self.args.test or (stage is 'val'):
-    #         use_vis = True
-
-    # 参数
-    # 计算参数列表,获取参数
-    metrics_dict = self.evler.end_epoch()
-    for metric, value in metrics_dict.items():
-        mlflow.log_metric(metric + '_' + self.epoch_stage, value, step=epoch)
-
-    if self.log_frq is not None and self.use_vis:
-        if epoch % self.log_frq == 0:
-            # 测试一次运行的
-            with torch.no_grad():
-                if isinstance(last_batch, list):
-                    data, target = last_batch
-                else:
-                    data, target = last_batch["image"], last_batch["label"]
-                data, target = data.cuda(self.rank), target.cuda(self.rank)
-                logits = model(data)
-                if not logits.is_cuda:
-                    target = target.cpu()
-            # 可视化
-            if self.vis_2d:
-                utils.vis.vis_2d(self.vis_2d_cache_loc, epoch, image=data, outputs=logits, label=target,
-                                 add_text='_' + self.epoch_stage, rank=self.rank)
-                # 检查缓存位置是否存在
-                if not os.path.exists(self.vis_2d_cache_loc):
-                    raise ValueError("vis_2d_cache_loc not exists")
-                # 找到缓存的文件，并且上传到mlflow上面
-                for filename in os.listdir(self.vis_2d_cache_loc):
-                    filepath = os.path.join(self.vis_2d_cache_loc, filename)
-                    if os.path.isfile(filepath):
-                        mlflow.log_artifact(filepath, artifact_path="vis_2d/")
-
-            if self.vis_3d:
-                utils.vis.vis_mha(self.vis_3d_cache_loc, epoch, image=data, outputs=logits, label=target,
+        if self.log_frq is not None and self.use_vis:
+            if self.epoch % self.log_frq == 0:
+                # 测试一次运行的
+                with torch.no_grad():
+                    if isinstance(first_batch, list):
+                        data, target = first_batch
+                    else:
+                        data, target = first_batch["image"], first_batch["label"]
+                    data, target = data.cuda(self.rank), target.cuda(self.rank)
+                    logits = model(data)
+                    if not logits.is_cuda:
+                        target = target.cpu()
+                # 可视化
+                if self.vis_2d:
+                    utils.vis.vis(self.vis_2d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
                                   add_text='_' + self.epoch_stage, rank=self.rank)
-                # 检查缓存位置是否存在
-                if not os.path.exists(self.vis_3d_cache_loc):
-                    raise ValueError("vis_3d_cache_loc not exists")
-                # 找到缓存的文件夹，并且上传到mlflow上面
-                for filename in os.listdir(self.vis_3d_cache_loc):
-                    filepath = os.path.join(self.vis_3d_cache_loc, filename)  # 应该是一个文件夹
-                    # 检查是否是文件夹
-                    if os.path.isdir(filepath):
-                        mlflow.log_artifacts(filepath, artifact_path="vis_3d/" + filename)
-                    # if os.path.isfile(filepath):
-                    #     mlflow.log_artifacts(filepath, artifact_path="vis_3d/")
+                    # 检查缓存位置是否存在
+                    if not os.path.exists(self.vis_2d_cache_loc):
+                        raise ValueError("vis_2d_cache_loc not exists")
+                    # 找到缓存的文件，并且上传到mlflow上面
+                    for filename in os.listdir(self.vis_2d_cache_loc):
+                        filepath = os.path.join(self.vis_2d_cache_loc, filename)
+                        if os.path.isfile(filepath):
+                            mlflow.log_artifact(filepath, artifact_path="vis_2d/")
 
+                if self.vis_3d:
+                    utils.vis.vis_mha(self.vis_3d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
+                                      add_text='_' + self.epoch_stage, rank=self.rank)
+                    # 检查缓存位置是否存在
+                    if not os.path.exists(self.vis_3d_cache_loc):
+                        raise ValueError("vis_3d_cache_loc not exists")
+                    # 找到缓存的文件夹，并且上传到mlflow上面
+                    for filename in os.listdir(self.vis_3d_cache_loc):
+                        filepath = os.path.join(self.vis_3d_cache_loc, filename)  # 应该是一个文件夹
+                        # 检查是否是文件夹
+                        if os.path.isdir(filepath):
+                            mlflow.log_artifacts(filepath, artifact_path="vis_3d/" + filename)
+                        # if os.path.isfile(filepath):
+                        #     mlflow.log_artifacts(filepath, artifact_path="vis_3d/")
 
-def __enter__(self):
-    # global args
-    # 出示服务器
-    print("mlflow server: ", mlflow.get_tracking_uri())
-    self._normalize_tag()
-    # 模拟参数
-    run_name = None
-    if self.args.new_run_name is not None:
-        run_name = self.args.exp_name + '-' + self.args.new_run_name
-    # run_id是用来指定运行的，run_name是用来新建的，都可以没有但是功能不共用
-    self.run = mlflow.start_run(run_id=self.args.run_id, run_name=run_name)
+    def __enter__(self):
+        # global args
+        # 出示服务器
+        print("mlflow server: ", mlflow.get_tracking_uri())
+        self._normalize_tag()
+        # 模拟参数
+        run_name = None
+        if self.args.new_run_name is not None:
+            run_name = self.args.exp_name + '-' + self.args.new_run_name
+        # run_id是用来指定运行的，run_name是用来新建的，都可以没有但是功能不共用
+        self.run = mlflow.start_run(run_id=self.args.run_id, run_name=run_name)
 
-    return self.run
+        return self.run
 
-
-def __exit__(self, exc_type, exc_val, exc_tb):
-    # save_checkpoint()
-    # 记录最后运行run_id
-    mlflow.log_param("last_run_id", self.run.info.run_id)
-    # 出示服务器
-    print("run {} finished".format(self.run.info.run_name))
-    print("mlflow server: ", mlflow.get_tracking_uri())
-    return mlflow.end_run()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # save_checkpoint()
+        # 记录最后运行run_id
+        mlflow.log_param("last_run_id", self.run.info.run_id)
+        # 出示服务器
+        print("run {} finished".format(self.run.info.run_name))
+        print("mlflow server: ", mlflow.get_tracking_uri())
+        return mlflow.end_run()
