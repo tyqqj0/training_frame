@@ -52,6 +52,8 @@ class box:
     def __init__(self, args, model):
 
         # stop_all_runs()
+        self.best_acc = -1
+        self.default_modelname = None
         self.run_id = None
         self.loader_len = None
         self.epoch = None
@@ -232,7 +234,7 @@ class box:
             for metric, value in metrics_dict.items():
                 # step = self.epoch + step * 1 / self.loader_len # 不能用浮点
                 step = self.epoch * self.loader_len + step
-                mlflow.log_metric(metric + '_in_epoch', value, step=step)
+                mlflow.log_metric('in_epoch_' + metric, value, step=step)
 
         # 如果当前阶段是验证（val）阶段，我们只需要计算和显示参数
         elif stage == "val":
@@ -261,7 +263,7 @@ class box:
         # 计算参数列表,获取参数
         metrics_dict = self.evler.end_epoch()
         for metric, value in metrics_dict.items():
-            mlflow.log_metric(metric + '_' + self.epoch_stage, value, step=self.epoch + 1)
+            mlflow.log_metric(self.epoch_stage + '_' + metric, value, step=self.epoch + 1)
 
         if self.log_frq is not None and self.use_vis:
             if (self.epoch + 1) % self.log_frq == 0:
@@ -332,33 +334,36 @@ class box:
                 end_time = time.time()
                 print("vis using time: ", end_time - start_time)
 
-    def save_model(self, model, epoch, args, filename=None, best_acc=0, optimizer=None, scheduler=None):
+    def save_model(self, model, epoch, filename=None):
+        print("box saving model")
         if filename is None:
-            filename = 'model.pt'
-        state_dict = model.state_dict() if not args.distributed else model.module.state_dict()
-        save_dict = {"epoch": epoch, "best_acc": best_acc, "state_dict": state_dict}
-        if optimizer is not None:
-            save_dict["optimizer"] = optimizer.state_dict()
-        if scheduler is not None:
-            save_dict["scheduler"] = scheduler.state_dict()
+            filename = self.default_modelname
 
-        # 假设 self.artifact_location 是 'mlflow-artifacts:/243272572310566340'
-        location = self.artifact_location
+        # 保存模型
+        # 检查是否应保存模型
+        if (epoch + 1) % self.save_frq != 0:
+            return
 
-        # 使用正则表达式从artifact_location中获取最后的数字
-        match = re.search(r'/(\d+)$', location)
-        if match is not None:
-            number = match.group(1)
-        else:
-            raise ValueError("No number found in artifact location")
+        # 结束 epoch 并获取准确度信息
+        metrics = self.evler.end_epoch()
+        accuracy = metrics['DCE']  # 假设 evler.end_epoch() 返回一个字典，其中包含准确度
 
-        # 附加到'.art/model'路径中，并在数字前后添加'.'
-        new_path = os.path.join('./mlruns', number, 'models')  # mlruns文件夹下不能随便有model
-        filename = os.path.join(new_path, filename)
-        if not os.path.exists(new_path):
-            os.mkdir(new_path)
-        torch.save(save_dict, filename)
-        print("Saving checkpoint ", filename)
+        # 使用 mlflow.pytorch.save_model 保存模型
+        mlflow.pytorch.log_model(model, f"{self.artifact_location}/{filename}", registered_model_name=filename)
+
+        print("box saving best model")
+
+        # 检查是否应更新 best_acc 并保存最佳模型
+        if accuracy > self.best_acc:
+            self.best_acc = accuracy
+            # 删除旧的最佳模型
+            best_model_path = f"{self.artifact_location}/{filename}_best"
+            if os.path.isfile(best_model_path):  # 如果是文件，使用os.remove()
+                os.remove(best_model_path)
+            elif os.path.isdir(best_model_path):  # 如果是目录，使用shutil.rmtree()
+                shutil.rmtree(best_model_path)
+            # 保存最佳模型
+            mlflow.pytorch.log_model(model, best_model_path, registered_model_name=filename + "_best")
 
     def __enter__(self):
         # global args
@@ -390,6 +395,9 @@ class box:
         '''
         artifact_uri = mlflow.get_artifact_uri()
         print(f"Artifact URI: {artifact_uri}")
+        # 将self.default_modelname设置为run_name
+        if self.default_modelname is None:
+            self.default_modelname = self.run.info.run_name
         return self.run
 
     def __exit__(self, exc_type, exc_val, exc_tb):

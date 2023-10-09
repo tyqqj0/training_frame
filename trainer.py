@@ -270,23 +270,24 @@ def run_training(
                     )
                     # if box.writer is not None:
                     #     box.writer.add_scalar("val_acc", val_avg_acc, epoch)
-                    if val_avg_acc > val_acc_max:
-                        print("new best ({:.6f} --> {:.6f}). ".format(val_acc_max, val_avg_acc))
-                        val_acc_max = val_avg_acc
-                        b_new_best = True
-                        if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
-                            # save_checkpoint(
-                            #     model, epoch, args, best_acc=val_acc_max, optimizer=optimizer, scheduler=scheduler
-                            # )
-                            box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer)
-
-                if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
-                    # save_checkpoint(model, epoch, args, best_acc=val_acc_max, filename="model_final.pt")
-                    box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer,
-                                   filename="model_final.pt")
-                    # if b_new_best:
-                    #     print("Copying to model.pt new best model!!!!")
-                    #     shutil.copyfile(os.path.join(args.logdir, "model_final.pt"), os.path.join(args.logdir, "model.pt"))
+                    box.save_model(model, epoch)
+                #     if val_avg_acc > val_acc_max:
+                #         print("new best ({:.6f} --> {:.6f}). ".format(val_acc_max, val_avg_acc))
+                #         val_acc_max = val_avg_acc
+                #         b_new_best = True
+                #         if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
+                #             # save_checkpoint(
+                #             #     model, epoch, args, best_acc=val_acc_max, optimizer=optimizer, scheduler=scheduler
+                #             # )
+                #             box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer)
+                #
+                # if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
+                #     # save_checkpoint(model, epoch, args, best_acc=val_acc_max, filename="model_final.pt")
+                #     box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer,
+                #                    filename="model_final.pt")
+                # if b_new_best:
+                #     print("Copying to model.pt new best model!!!!")
+                #     shutil.copyfile(os.path.join(args.logdir, "model_final.pt"), os.path.join(args.logdir, "model.pt"))
 
             if scheduler is not None:
                 scheduler.step()
