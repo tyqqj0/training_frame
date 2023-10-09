@@ -48,6 +48,7 @@ from monai.inferers import sliding_window_inference
 
 class box:
     def __init__(self, args, model):
+        self.run_id = None
         self.loader_len = None
         self.epoch = None
         self.use_vis = None
@@ -123,6 +124,9 @@ class box:
                 # raise ValueError("Cannot set is_continue to True when name is None")
                 raise ValueError("Cannot find last run id")
             args.run_id = last_run_id
+            self.args.run_id = last_run_id
+            # 默认使用最后一个运行的id
+            self.run_id = last_run_id
 
         if args.test and args.run_id is None:
             # 询问是否使用最后一个运行的id
@@ -329,7 +333,7 @@ class box:
         if self.args.new_run_name is not None:
             run_name = self.args.exp_name + '-' + self.args.new_run_name
         # run_id是用来指定运行的，run_name是用来新建的，都可以没有但是功能不共用
-        self.run = mlflow.start_run(run_id=self.args.run_id, run_name=run_name)
+        self.run = mlflow.start_run(run_id=self.run_id, run_name=run_name)
 
         return self.run
 
