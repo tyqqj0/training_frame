@@ -179,6 +179,7 @@ class box:
     def start_epoch(self, loader, stage, epoch, use_vis=None):
         self.epoch = epoch
         self.epoch_stage = stage
+        self.use_vis = use_vis
         if use_vis is None:
             if self.args.test or (stage is 'val'):
                 self.use_vis = True
@@ -257,12 +258,12 @@ class box:
         # 计算参数列表,获取参数
         metrics_dict = self.evler.end_epoch()
         for metric, value in metrics_dict.items():
-            mlflow.log_metric(metric + '_' + self.epoch_stage, value, step=self.epoch)
+            mlflow.log_metric(metric + '_' + self.epoch_stage, value, step=self.epoch + 1)
 
         if self.log_frq is not None and self.use_vis:
-            if self.epoch % self.log_frq == 0:
+            if (self.epoch + 1) % self.log_frq == 0:
                 # 显示
-                print("loging epoch: ", self.epoch)
+                print("loging epoch: ", self.epoch + 1)
                 start_time = time.time()
                 # 测试一次运行的
                 with torch.no_grad():
@@ -357,7 +358,8 @@ class box:
         else:
             print("using new run name: ", run_name)
             self.run = mlflow.start_run(run_name=run_name)
-        self._normalize_tag()  # 注意一些方法会提前启动运行
+        if not self.args.is_continue:
+            self._normalize_tag()  # 注意一些方法会提前启动运行
         '''
         mlflow.log_param()
         mlflow.log_params()
