@@ -213,11 +213,11 @@ class box:
         print("box updating")
         # 如果out是概率，我们需要转换成预测, 判断最小值是否为0
         if out.min() < 0:
-            target = target < 0
+            target = target[1] < 0
 
         # 如果当前阶段是训练（train）阶段，我们需要进行参数更新
         if stage == "train":
-            metrics_dict = self.evler.update(out, target, batch_size)
+            metrics_dict = self.evler.update(out, target, batch_size) # 暂时
             # 记录和上传参数
             for metric, value in metrics_dict.items():
                 # step = self.epoch + step * 1 / self.loader_len # 不能用浮点
