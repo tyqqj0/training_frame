@@ -49,7 +49,7 @@ from monai.inferers import sliding_window_inference
 
 
 class box:
-    def __init__(self, args, model):
+    def __init__(self, args):
 
         # stop_all_runs()
         self.best_acc = -1
@@ -346,24 +346,24 @@ class box:
 
         # 结束 epoch 并获取准确度信息
         metrics = self.evler.end_epoch()
-        accuracy = metrics['DCE']  # 假设 evler.end_epoch() 返回一个字典，其中包含准确度
+        accuracy = metrics['DSC']  # 假设 evler.end_epoch() 返回一个字典，其中包含准确度
 
         # 使用 mlflow.pytorch.save_model 保存模型
-        mlflow.pytorch.log_model(model, f"{self.artifact_location}/{filename}", registered_model_name=filename)
+        mlflow.pytorch.log_model(model, filename, registered_model_name=filename)
 
         print("box saving best model")
 
         # 检查是否应更新 best_acc 并保存最佳模型
         if accuracy > self.best_acc:
             self.best_acc = accuracy
-            # 删除旧的最佳模型
-            best_model_path = f"{self.artifact_location}/{filename}_best"
-            if os.path.isfile(best_model_path):  # 如果是文件，使用os.remove()
-                os.remove(best_model_path)
-            elif os.path.isdir(best_model_path):  # 如果是目录，使用shutil.rmtree()
-                shutil.rmtree(best_model_path)
+            # # 删除旧的最佳模型
+            # best_model_path = f"{self.artifact_location}/{filename}_best"
+            # if os.path.isfile(best_model_path):  # 如果是文件，使用os.remove()
+            #     os.remove(best_model_path)
+            # elif os.path.isdir(best_model_path):  # 如果是目录，使用shutil.rmtree()
+            #     shutil.rmtree(best_model_path)
             # 保存最佳模型
-            mlflow.pytorch.log_model(model, best_model_path, registered_model_name=filename + "_best")
+            mlflow.pytorch.log_model(model, filename + "-best", registered_model_name=filename + "_best")
 
     def __enter__(self):
         # global args
