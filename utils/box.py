@@ -50,7 +50,7 @@ from monai.inferers import sliding_window_inference
 
 class box:
     def __init__(self, args, model):
-        stop_all_runs()
+        # stop_all_runs()
         self.run_id = None
         self.loader_len = None
         self.epoch = None
@@ -70,6 +70,8 @@ class box:
         self.vis_3d_cache_loc = './run_cache/vis_3d'
         self.vis_2d_cover = args.vis_2d_cover
         self.vis_3d_cover = args.vis_3d_cover
+
+        check_run()
 
         inf_size = [args.roi_x, args.roi_y, args.roi_z]
         self.model_inferer = partial(
@@ -162,6 +164,7 @@ class box:
 
         # 置入内部参数
         self.artifact_location = experiment.artifact_location
+        check_run()
 
     # 内部函数 标准化标签
     def _normalize_tag(self, tag=None):
@@ -216,7 +219,7 @@ class box:
         print("box updating")
         # 如果out是概率，我们需要转换成预测, 判断最小值是否为0
         if out.min() < 0:
-            target = target[1] < 0
+            out = out < 0
 
         # 如果当前阶段是训练（train）阶段，我们需要进行参数更新
         if stage == "train":
@@ -338,21 +341,35 @@ class box:
         print("Saving checkpoint ", filename)
 
     def __enter__(self):
+        check_run()
         # global args
         # 出示服务器
         print("mlflow server: ", mlflow.get_tracking_uri())
-        self._normalize_tag()
+
         # 模拟参数
         run_name = None
         if self.args.new_run_name is not None:
             run_name = self.args.exp_name + '-' + self.args.new_run_name
         # run_id是用来指定运行的，run_name是用来新建的，都可以没有但是功能不共用
-        if self.args.run_id is not None:
-            print("using run id: ", self.args.run_id)
+        if self.run_id is not None:
+            print("using run id: ", self.run_id)
             self.run = mlflow.start_run(run_id=self.run_id, run_name=run_name)
         else:
             print("using new run name: ", run_name)
             self.run = mlflow.start_run(run_name=run_name)
+        self._normalize_tag()  # 注意一些方法会提前启动运行
+        '''
+        mlflow.log_param()
+        mlflow.log_params()
+        mlflow.log_metric()
+        mlflow.log_metrics()
+        mlflow.set_tag()
+        mlflow.set_tags()
+        mlflow.log_artifact()
+        mlflow.log_artifacts()
+        '''
+        artifact_uri = mlflow.get_artifact_uri()
+        print(f"Artifact URI: {artifact_uri}")
         return self.run
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -370,11 +387,23 @@ def stop_all_runs():
     client = MlflowClient()
     # 获取所有的运行
     experiment_id = client.get_experiment_by_name("traint1").experiment_id
-    runs = client.list_run_infos(experiment_id)
+    runs = client.search_runs(experiment_ids=[experiment_id])
     print("experiment_id:", experiment_id)
     # 遍历所有的运行
     for run in runs:
         # 如果运行还在进行中，结束它
-        if run.status == "RUNNING":
-            print("run_id:", run.run_id)
-            client.set_terminated(run.run_id)
+        try:
+            if run.info.status == "RUNNING":
+                print("run_id:", run.info.run_id)
+                client.set_terminated(run.info.run_id)
+        except mlflow.exceptions.MissingConfigException:
+            print(f"Skipping run with missing meta.yaml file: {run.info.run_id}")
+    # check_run()
+
+
+def check_run():
+    active_run = mlflow.active_run()
+    if active_run is not None:
+        print(f"A run with UUID {active_run.info.run_id} is already active.")
+    else:
+        print("No active run.")
