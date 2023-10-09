@@ -59,7 +59,7 @@ class AverageMeter(object):
 
 def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=None):
     model.train()
-    box.start_epoch(loader=loader, stage='train', epoch=epoch)
+    box.start_epoch(loader=loader, stage='train', epoch=epoch, use_vis=False)
     start_time = time.time()
     run_loss = AverageMeter()
     # see_loss = evl(loader, epoch=epoch)

@@ -39,7 +39,7 @@ parser.add_argument("--tag_id", type=str, default=None, help="tag id, ***command
 parser.add_argument("--log_frq", type=int, default=1, help="log frequency")
 parser.add_argument("--val_frq", type=int, default=1, help="val frequency")
 parser.add_argument("--save_frq", type=int, default=1,
-                    help="save frequency, disabled in test and val")  # 目前是控制在弄val的频率
+                    help="save frequency, disabled in test and val")# 目前是控制在弄val的频率
 
 parser.add_argument("--user_name", type=str, default="tyqqj", help="user name")
 
