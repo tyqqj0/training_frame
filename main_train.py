@@ -36,7 +36,7 @@ parser.add_argument("--new_run_name", type=str, default=None, help="new run name
 parser.add_argument("--log_dir", type=str, default="./runs", help="log dir")
 # parser.add_argument("--artifact_dir", type=str, default="./artifacts", help="artifact dir")
 parser.add_argument("--tag_id", type=str, default=None, help="tag id, ***commanded to set***")
-parser.add_argument("--log_frq", type=int, default=50, help="log frequency")
+parser.add_argument("--log_frq", type=int, default=100, help="log frequency")
 parser.add_argument("--save_frq", type=int, default=50, help="save frequency, disabled in test and val")
 
 parser.add_argument("--user_name", type=str, default="tyqqj", help="user name")
@@ -140,7 +140,7 @@ def main():
     #
     args = parser.parse_args()
     # 暂时更改的区域
-    args.val_every = args.log_frq
+    args.val_every = args.save_frq
     args.amp = not args.noamp
     args.logdir = "./runs/" + args.logdir
     if args.save_to_test:

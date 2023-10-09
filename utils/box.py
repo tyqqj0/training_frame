@@ -196,6 +196,10 @@ class box:
 
     def update_in_epoch(self, step, out, target, batch_size=-1, stage="train"):
         print("box updating")
+        # 如果out是概率，我们需要转换成预测, 判断最小值是否为0
+        if out.min() < 0:
+            target = target < 0
+
         # 如果当前阶段是训练（train）阶段，我们需要进行参数更新
         if stage == "train":
             metrics_dict = self.evler.update(out, target, batch_size)
@@ -236,6 +240,9 @@ class box:
 
         if self.log_frq is not None and self.use_vis:
             if self.epoch % self.log_frq == 0:
+                # 显示
+                print("loging epoch: ", self.epoch)
+                start_time = time.time()
                 # 测试一次运行的
                 with torch.no_grad():
                     if isinstance(first_batch, list):
@@ -281,6 +288,8 @@ class box:
                             mlflow.log_artifacts(filepath, artifact_path="vis_3d/" + filename)
                         # if os.path.isfile(filepath):
                         #     mlflow.log_artifacts(filepath, artifact_path="vis_3d/")
+                end_time = time.time()
+                print("vis using time: ", end_time - start_time)
 
     def save_model(self, model, epoch, args, filename=None, best_acc=0, optimizer=None, scheduler=None):
         if filename is None:
