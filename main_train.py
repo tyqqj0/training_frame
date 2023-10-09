@@ -36,13 +36,17 @@ parser.add_argument("--new_run_name", type=str, default=None, help="new run name
 parser.add_argument("--log_dir", type=str, default="./runs", help="log dir")
 # parser.add_argument("--artifact_dir", type=str, default="./artifacts", help="artifact dir")
 parser.add_argument("--tag_id", type=str, default=None, help="tag id, ***commanded to set***")
-parser.add_argument("--log_frq", type=int, default=100, help="log frequency")
-parser.add_argument("--save_frq", type=int, default=50, help="save frequency, disabled in test and val")  # 目前是控制在弄val的频率
+parser.add_argument("--log_frq", type=int, default=1, help="log frequency")
+parser.add_argument("--val_frq", type=int, default=1, help="val frequency")
+parser.add_argument("--save_frq", type=int, default=1,
+                    help="save frequency, disabled in test and val")  # 目前是控制在弄val的频率
 
 parser.add_argument("--user_name", type=str, default="tyqqj", help="user name")
 
-parser.add_argument("--vis_3d", action="store_true", help="visualize 3d images")
 parser.add_argument("--vis_2d", action="store_true", help="visualize 2d images")
+parser.add_argument("--vis_3d", action="store_true", help="visualize 3d images")
+parser.add_argument("--vis_2d_tb", action="store_true", help="visualize 2d tensorboard images")
+
 # 覆盖保存显示, 控制可视化是保留最新还是保留每个epoch
 parser.add_argument("--vis_2d_cover", action="store_true", help="visualize 2d images")
 parser.add_argument("--vis_3d_cover", action="store_true", help="visualize 3d images")
@@ -56,7 +60,7 @@ parser.add_argument("--logdir", default="test", type=str, help="directory to sav
 # parser.add_argument("--box_root", default="./run", type=str, help="training box root")
 # parser.add_argument("--vis", action="store_true", help="visualize training")
 # parser.add_argument("--vis3d", action="store_true", help="visualize training")
-
+########################################################################################################
 # 数据位置参数
 parser.add_argument(
     "--pretrained_dir", default="./pretrained_models/", type=str, help="pretrained checkpoint directory"
@@ -140,7 +144,7 @@ def main():
     #
     args = parser.parse_args()
     # 暂时更改的区域
-    args.val_every = args.save_frq
+    args.val_every = args.val_frq
     args.amp = not args.noamp
     args.logdir = "./runs/" + args.logdir
     if args.save_to_test:
@@ -155,6 +159,7 @@ def main():
 
 
 def main_worker(gpu, args):
+    logrbox = box(args)
     if args.distributed:
         torch.multiprocessing.set_start_method("fork", force=True)
     np.set_printoptions(formatter={"float": "{: 0.3f}".format}, suppress=True)
@@ -202,7 +207,7 @@ def main_worker(gpu, args):
     else:
         raise ValueError("Unsupported model " + str(args.model_name))
 
-    logrbox = box(args, model=model)
+    logrbox.set_model_inferer(model)
     dice_loss = DiceCELoss(
         to_onehot_y=args.out_channels, softmax=True, squared_pred=True, smooth_nr=args.smooth_nr,
         smooth_dr=args.smooth_dr

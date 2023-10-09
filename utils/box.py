@@ -49,7 +49,8 @@ from monai.inferers import sliding_window_inference
 
 
 class box:
-    def __init__(self, args, model):
+    def __init__(self, args):
+
         stop_all_runs()
         self.run_id = None
         self.loader_len = None
@@ -63,22 +64,16 @@ class box:
         self.artifact_location = None
         self.vis_3d = args.vis_3d
         self.vis_2d = args.vis_2d
+        self.vis_2d_tb = args.vis_2d_tb
         self.log_frq = args.log_frq
         self.save_frq = args.save_frq
         self.vis_2d_slice_loc = 96 / 2
         self.vis_2d_cache_loc = './run_cache/vis_2d'
+        self.vis_2d_tb_cache_loc = './run_cache/vis_2d_tb'
         self.vis_3d_cache_loc = './run_cache/vis_3d'
         self.vis_2d_cover = args.vis_2d_cover
         self.vis_3d_cover = args.vis_3d_cover
-
-        inf_size = [args.roi_x, args.roi_y, args.roi_z]
-        self.model_inferer = partial(
-            sliding_window_inference,
-            roi_size=inf_size,
-            sw_batch_size=args.sw_batch_size,
-            predictor=model,
-            overlap=args.infer_overlap,
-        )
+        self.model_inferer = None
 
         # 实验模式检查
         if args.train and args.test:
@@ -162,6 +157,17 @@ class box:
 
         # 置入内部参数
         self.artifact_location = experiment.artifact_location
+
+    def set_model_inferer(self, model):
+        print("set model inferer")
+        inf_size = [self.args.roi_x, self.args.roi_y, self.args.roi_z]
+        self.model_inferer = partial(
+            sliding_window_inference,
+            roi_size=inf_size,
+            sw_batch_size=self.args.sw_batch_size,
+            predictor=model,
+            overlap=self.args.infer_overlap,
+        )
 
     # 内部函数 标准化标签
     def _normalize_tag(self, tag=None):
@@ -273,6 +279,9 @@ class box:
                         if self.model_inferer is not None and data.shape[-1] != 96:  # TODO: 这里是干啥的
                             logits = self.model_inferer(data)
                         else:
+                            if data.shape[-1] == 96:
+                                # logits = model(data)
+                                print("input not match and model_inferer is None, please set model_inferer")
                             logits = model(data)
                     # logits = model(data)
 
@@ -281,8 +290,8 @@ class box:
                         target = target.cpu()
                 # 可视化
                 if self.vis_2d:
-                    utils.vis.vis(self.vis_2d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
-                                  add_text=self.epoch_stage, rank=self.rank)
+                    utils.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
+                                     add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
                     if not os.path.exists(self.vis_2d_cache_loc):
                         raise ValueError("vis_2d_cache_loc not exists")
@@ -291,6 +300,19 @@ class box:
                         filepath = os.path.join(self.vis_2d_cache_loc, filename)
                         if os.path.isfile(filepath):
                             mlflow.log_artifact(filepath, artifact_path="vis_2d")
+
+                if self.vis_2d_tb:
+                    utils.vis.vis_2d_tensorboard(self.vis_2d_tb_cache_loc, self.epoch, image=data, outputs=logits,
+                                                 label=target,
+                                                 add_text=self.epoch_stage, rank=self.rank)
+                    # 检查缓存位置是否存在
+                    if not os.path.exists(self.vis_2d_cache_loc):
+                        raise ValueError("vis_2d_tb_cache_loc not exists")
+                    # 找到缓存的文件，并且上传到mlflow上面
+                    for filename in os.listdir(self.vis_2d_cache_loc):
+                        filepath = os.path.join(self.vis_2d_cache_loc, filename)
+                        if os.path.isfile(filepath):
+                            mlflow.log_artifact(filepath, artifact_path="vis_2d_tensorboard")
 
                 if self.vis_3d:
                     utils.vis.vis_mha(self.vis_3d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
