@@ -130,11 +130,11 @@ class box:
                 self.run_id = last_run_id
             else:
                 # 检查run_id是否存在
-                runs = mlflow.get_run(run_id=str(args.run_id))
-                if runs is None:
+                run = mlflow.get_run(run_id=str(args.run_id))
+                if run is None:
                     raise ValueError("run_id {} not exists".format(args.run_id))
                 # print(runs)
-                # print("using run id: {}, name: {}".format(args.run_id, runs.loc[0, "tags.mlflow.runName"]))
+                print("using run id: {}, name: {}".format(args.run_id, run.data.tags["mlflow.runName"]))
                 # 默认使用最后一个运行的id
                 self.run_id = args.run_id
                 self.args.run_id = args.run_id
@@ -344,8 +344,12 @@ class box:
         if self.args.new_run_name is not None:
             run_name = self.args.exp_name + '-' + self.args.new_run_name
         # run_id是用来指定运行的，run_name是用来新建的，都可以没有但是功能不共用
-        self.run = mlflow.start_run(run_id=self.run_id, run_name=run_name)
-
+        if self.args.run_id is not None:
+            print("using run id: ", self.args.run_id)
+            self.run = mlflow.start_run(run_id=self.run_id, run_name=run_name)
+        else:
+            print("using new run name: ", run_name)
+            self.run = mlflow.start_run(run_name=run_name)
         return self.run
 
     def __exit__(self, exc_type, exc_val, exc_tb):
