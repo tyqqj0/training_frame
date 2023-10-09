@@ -127,6 +127,15 @@ class box:
             self.args.run_id = last_run_id
             # 默认使用最后一个运行的id
             self.run_id = last_run_id
+        else:
+            # 检查run_id是否存在
+            runs = mlflow.search_runs(run_ids=[args.run_id])
+            if runs.empty:
+                raise ValueError("run_id {} not exists".format(args.run_id))
+            # print(runs)
+            print("using run id: {}, name: {}".format(args.run_id, runs.loc[0, "tags.mlflow.runName"]))
+            self.run_id = args.run_id
+            self.args.run_id = args.run_id
 
         if args.test and args.run_id is None:
             # 询问是否使用最后一个运行的id
