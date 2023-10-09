@@ -109,34 +109,35 @@ class box:
         # print(experiment)
         # mlflow 运行设置参数
         # 默认继续的运行
-        if args.is_continue and args.run_id is None:
-            # 尝试获取最后一个运行的id
-            runs = mlflow.search_runs(order_by=["attribute.start_time DESC"], max_results=1)
-            if runs.empty:
-                raise ValueError(
-                    "no run exists, please check if the experiment name is correct or muti-user conflict on",
-                    mlflow.get_tracking_uri())  # 遇到了开多个不同源的mlflow server的问题，会在不同地方创建同名的实验
-            # print(runs)
-            last_run_id = runs.loc[0, "run_id"]
-            # print(runs)
-            print("using last run id: {}, name: {}".format(last_run_id, runs.loc[0, "tags.mlflow.runName"]))
-            if last_run_id is None:
-                # raise ValueError("Cannot set is_continue to True when name is None")
-                raise ValueError("Cannot find last run id")
-            args.run_id = last_run_id
-            self.args.run_id = last_run_id
-            # 默认使用最后一个运行的id
-            self.run_id = last_run_id
-        else:
-            # 检查run_id是否存在
-            runs = mlflow.search_runs(run_ids=[args.run_id])
-            if runs.empty:
-                raise ValueError("run_id {} not exists".format(args.run_id))
-            # print(runs)
-            print("using run id: {}, name: {}".format(args.run_id, runs.loc[0, "tags.mlflow.runName"]))
-            # 默认使用最后一个运行的id
-            self.run_id = args.run_id
-            self.args.run_id = args.run_id
+        if args.is_continue:
+            if args.run_id is None:
+                # 尝试获取最后一个运行的id
+                runs = mlflow.search_runs(order_by=["attribute.start_time DESC"], max_results=1)
+                if runs.empty:
+                    raise ValueError(
+                        "no run exists, please check if the experiment name is correct or muti-user conflict on",
+                        mlflow.get_tracking_uri())  # 遇到了开多个不同源的mlflow server的问题，会在不同地方创建同名的实验
+                # print(runs)
+                last_run_id = runs.loc[0, "run_id"]
+                # print(runs)
+                print("using last run id: {}, name: {}".format(last_run_id, runs.loc[0, "tags.mlflow.runName"]))
+                if last_run_id is None:
+                    # raise ValueError("Cannot set is_continue to True when name is None")
+                    raise ValueError("Cannot find last run id")
+                args.run_id = last_run_id
+                self.args.run_id = last_run_id
+                # 默认使用最后一个运行的id
+                self.run_id = last_run_id
+            else:
+                # 检查run_id是否存在
+                runs = mlflow.get_run(run_id=str(args.run_id))
+                if runs is None:
+                    raise ValueError("run_id {} not exists".format(args.run_id))
+                # print(runs)
+                # print("using run id: {}, name: {}".format(args.run_id, runs.loc[0, "tags.mlflow.runName"]))
+                # 默认使用最后一个运行的id
+                self.run_id = args.run_id
+                self.args.run_id = args.run_id
 
         if args.test and args.run_id is None:
             # 询问是否使用最后一个运行的id
