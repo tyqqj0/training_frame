@@ -295,7 +295,7 @@ class box:
 
         # self.visualizes(loader, model)
 
-    def visualizes(self, loader, model):
+    def visualizes(self, model, loader):
         first_batch = None
         for i, data in enumerate(loader):
             first_batch = data
@@ -378,6 +378,8 @@ class box:
                 print("vis using time: ", end_time - start_time)
 
     def save_model(self, model, epoch, filename=None):
+        speed = self.timer.end()
+        mlflow.log_metric("epoch/s", speed, step=self.epoch)
         print("box saving model")
         if filename is None:
             filename = self.default_modelname
@@ -414,8 +416,7 @@ class box:
                                      signature=self.signatures)
 
     def load_model(self, model, load_run_id=None, model_version='latest', best_model=True, dict=True):
-        speed = self.timer.end()
-        mlflow.log_metric("epoch/s", speed, step=self.epoch)
+
         # 加载模型
         # 检查是否应加载模型
         if not self.args.is_continue:
