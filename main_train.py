@@ -36,10 +36,10 @@ parser.add_argument("--new_run_name", type=str, default=None, help="new run name
 parser.add_argument("--log_dir", type=str, default="./runs", help="log dir")
 # parser.add_argument("--artifact_dir", type=str, default="./artifacts", help="artifact dir")
 parser.add_argument("--tag_id", type=str, default=None, help="tag id, ***commanded to set***")
-parser.add_argument("--log_frq", type=int, default=1, help="log frequency")
-parser.add_argument("--val_frq", type=int, default=1, help="val frequency")
-parser.add_argument("--save_frq", type=int, default=1,
-                    help="save frequency, disabled in test and val")# 目前是控制在弄val的频率
+parser.add_argument("--log_frq", type=int, default=100, help="log frequency")
+parser.add_argument("--val_frq", type=int, default=5, help="val frequency")
+parser.add_argument("--save_frq", type=int, default=50,
+                    help="save frequency, disabled in test and val")  # 目前是控制在弄val的频率
 
 parser.add_argument("--user_name", type=str, default="tyqqj", help="user name")
 
@@ -226,73 +226,75 @@ def main_worker(gpu, args):
 
     pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print("Total parameters count", pytorch_total_params)
+    with logrbox as run:
+        best_acc = 0
+        start_epoch = 0
 
-    best_acc = 0
-    start_epoch = 0
+        # if args.checkpoint is not None:
+        #     checkpoint = torch.load(args.checkpoint, map_location="cpu")
+        #     from collections import OrderedDict
+        #
+        #     new_state_dict = OrderedDict()
+        #     for k, v in checkpoint["state_dict"].items():
+        #         new_state_dict[k.replace("backbone.", "")] = v
+        #     model.load_state_dict(new_state_dict, strict=False)
+        #     if "epoch" in checkpoint:
+        #         start_epoch = checkpoint["epoch"]
+        #     if "best_acc" in checkpoint:
+        #         best_acc = checkpoint["best_acc"]
+        #     print("=> loaded checkpoint '{}' (epoch {}) (bestacc {})".format(args.checkpoint, start_epoch, best_acc))
+        model = box.load_model(model)
 
-    if args.checkpoint is not None:
-        checkpoint = torch.load(args.checkpoint, map_location="cpu")
-        from collections import OrderedDict
-
-        new_state_dict = OrderedDict()
-        for k, v in checkpoint["state_dict"].items():
-            new_state_dict[k.replace("backbone.", "")] = v
-        model.load_state_dict(new_state_dict, strict=False)
-        if "epoch" in checkpoint:
-            start_epoch = checkpoint["epoch"]
-        if "best_acc" in checkpoint:
-            best_acc = checkpoint["best_acc"]
-        print("=> loaded checkpoint '{}' (epoch {}) (bestacc {})".format(args.checkpoint, start_epoch, best_acc))
-
-    model.cuda(args.gpu)
-
-    if args.distributed:
-        torch.cuda.set_device(args.gpu)
-        if args.norm_name == "batch":
-            model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model.cuda(args.gpu)
-        model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[args.gpu], output_device=args.gpu, find_unused_parameters=True
-        )
-    if args.optim_name == "adam":
-        optimizer = torch.optim.Adam(model.parameters(), lr=args.optim_lr, weight_decay=args.reg_weight)
-    elif args.optim_name == "adamw":
-        optimizer = torch.optim.AdamW(model.parameters(), lr=args.optim_lr, weight_decay=args.reg_weight)
-    elif args.optim_name == "sgd":
-        optimizer = torch.optim.SGD(
-            model.parameters(), lr=args.optim_lr, momentum=args.momentum, nesterov=True, weight_decay=args.reg_weight
-        )
-    else:
-        raise ValueError("Unsupported Optimization Procedure: " + str(args.optim_name))
 
-    if args.lrschedule == "warmup_cosine":
-        scheduler = LinearWarmupCosineAnnealingLR(
-            optimizer, warmup_epochs=args.warmup_epochs, max_epochs=args.max_epochs
-        )
-    elif args.lrschedule == "cosine_anneal":
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.max_epochs)
-        if args.checkpoint is not None:
-            scheduler.step(epoch=start_epoch)
-    else:
-        scheduler = None
+        if args.distributed:
+            torch.cuda.set_device(args.gpu)
+            if args.norm_name == "batch":
+                model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+            model.cuda(args.gpu)
+            model = torch.nn.parallel.DistributedDataParallel(
+                model, device_ids=[args.gpu], output_device=args.gpu, find_unused_parameters=True
+            )
+        if args.optim_name == "adam":
+            optimizer = torch.optim.Adam(model.parameters(), lr=args.optim_lr, weight_decay=args.reg_weight)
+        elif args.optim_name == "adamw":
+            optimizer = torch.optim.AdamW(model.parameters(), lr=args.optim_lr, weight_decay=args.reg_weight)
+        elif args.optim_name == "sgd":
+            optimizer = torch.optim.SGD(
+                model.parameters(), lr=args.optim_lr, momentum=args.momentum, nesterov=True,
+                weight_decay=args.reg_weight
+            )
+        else:
+            raise ValueError("Unsupported Optimization Procedure: " + str(args.optim_name))
 
-    accuracy = run_training(  # 训练
-        model=model,
-        train_loader=loader[0],
-        val_loader=loader[1],
-        optimizer=optimizer,
-        loss_func=dice_loss,
-        acc_func=dice_acc,
-        args=args,
-        model_inferer=model_inferer,
-        scheduler=scheduler,
-        start_epoch=start_epoch,
-        post_label=post_label,
-        post_pred=post_pred,
-        box=logrbox
-    )
-    if args.save_to_test:
-        model.save(args)
+        if args.lrschedule == "warmup_cosine":
+            scheduler = LinearWarmupCosineAnnealingLR(
+                optimizer, warmup_epochs=args.warmup_epochs, max_epochs=args.max_epochs
+            )
+        elif args.lrschedule == "cosine_anneal":
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.max_epochs)
+            if args.checkpoint is not None:
+                scheduler.step(epoch=start_epoch)
+        else:
+            scheduler = None
+
+        accuracy = run_training(  # 训练
+            model=model,
+            train_loader=loader[0],
+            val_loader=loader[1],
+            optimizer=optimizer,
+            loss_func=dice_loss,
+            acc_func=dice_acc,
+            args=args,
+            model_inferer=model_inferer,
+            scheduler=scheduler,
+            start_epoch=start_epoch,
+            post_label=post_label,
+            post_pred=post_pred,
+            box=logrbox
+        )
+        if args.save_to_test:
+            model.save(args)
     return accuracy
 
 

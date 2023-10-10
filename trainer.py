@@ -217,80 +217,79 @@ def run_training(
     else:
         max_epochs = args.max_epochs
     print("max_epoch", max_epochs)
-    with box as run:
 
-        for epoch in range(start_epoch, max_epochs):
+    for epoch in range(start_epoch, max_epochs):
+        if args.distributed:
+            train_loader.sampler.set_epoch(epoch)
+            torch.distributed.barrier()
+        print(args.rank, time.ctime(), "Epoch:", epoch)
+        epoch_time = time.time()
+        # box
+
+        train_loss = train_epoch(
+            model, train_loader, optimizer, scaler=scaler, epoch=epoch, loss_func=loss_func, args=args, box=box
+        )
+        if args.rank == 0:
+            print(
+                "Final training  {}/{}".format(epoch, args.max_epochs - 1),
+                "loss: {:.4f}".format(train_loss),
+                "time {:.2f}s".format(time.time() - epoch_time),
+            )
+        # if args.rank == 0 and box.writer is not None:
+        #     box.writer.add_scalar("train_loss", train_loss, epoch)
+        b_new_best = False
+
+        # if (epoch + 1) % args.vis_every == 0:
+        #     vis.vis(model, val_loader, args, epoch)
+        #     vis.vis_cam(cam, val_loader, args)
+
+        if (epoch + 1) % args.val_every == 0:
             if args.distributed:
-                train_loader.sampler.set_epoch(epoch)
                 torch.distributed.barrier()
-            print(args.rank, time.ctime(), "Epoch:", epoch)
-            epoch_time = time.time()
-            # box
 
-            train_loss = train_epoch(
-                model, train_loader, optimizer, scaler=scaler, epoch=epoch, loss_func=loss_func, args=args, box=box
+            epoch_time = time.time()
+            print("val")
+            val_avg_acc = val_epoch(
+                model,
+                val_loader,
+                epoch=epoch,
+                acc_func=acc_func,
+                model_inferer=model_inferer,
+                args=args,
+                post_label=post_label,
+                post_pred=post_pred,
+                box=box
             )
             if args.rank == 0:
                 print(
-                    "Final training  {}/{}".format(epoch, args.max_epochs - 1),
-                    "loss: {:.4f}".format(train_loss),
+                    "Final validation  {}/{}".format(epoch, args.max_epochs - 1),
+                    "acc",
+                    val_avg_acc,
                     "time {:.2f}s".format(time.time() - epoch_time),
                 )
-            # if args.rank == 0 and box.writer is not None:
-            #     box.writer.add_scalar("train_loss", train_loss, epoch)
-            b_new_best = False
+                # if box.writer is not None:
+                #     box.writer.add_scalar("val_acc", val_avg_acc, epoch)
+                box.save_model(model, epoch)
+            #     if val_avg_acc > val_acc_max:
+            #         print("new best ({:.6f} --> {:.6f}). ".format(val_acc_max, val_avg_acc))
+            #         val_acc_max = val_avg_acc
+            #         b_new_best = True
+            #         if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
+            #             # save_checkpoint(
+            #             #     model, epoch, args, best_acc=val_acc_max, optimizer=optimizer, scheduler=scheduler
+            #             # )
+            #             box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer)
+            #
+            # if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
+            #     # save_checkpoint(model, epoch, args, best_acc=val_acc_max, filename="model_final.pt")
+            #     box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer,
+            #                    filename="model_final.pt")
+            # if b_new_best:
+            #     print("Copying to model.pt new best model!!!!")
+            #     shutil.copyfile(os.path.join(args.logdir, "model_final.pt"), os.path.join(args.logdir, "model.pt"))
 
-            # if (epoch + 1) % args.vis_every == 0:
-            #     vis.vis(model, val_loader, args, epoch)
-            #     vis.vis_cam(cam, val_loader, args)
-
-            if (epoch + 1) % args.val_every == 0:
-                if args.distributed:
-                    torch.distributed.barrier()
-
-                epoch_time = time.time()
-                print("val")
-                val_avg_acc = val_epoch(
-                    model,
-                    val_loader,
-                    epoch=epoch,
-                    acc_func=acc_func,
-                    model_inferer=model_inferer,
-                    args=args,
-                    post_label=post_label,
-                    post_pred=post_pred,
-                    box=box
-                )
-                if args.rank == 0:
-                    print(
-                        "Final validation  {}/{}".format(epoch, args.max_epochs - 1),
-                        "acc",
-                        val_avg_acc,
-                        "time {:.2f}s".format(time.time() - epoch_time),
-                    )
-                    # if box.writer is not None:
-                    #     box.writer.add_scalar("val_acc", val_avg_acc, epoch)
-                    box.save_model(model, epoch)
-                #     if val_avg_acc > val_acc_max:
-                #         print("new best ({:.6f} --> {:.6f}). ".format(val_acc_max, val_avg_acc))
-                #         val_acc_max = val_avg_acc
-                #         b_new_best = True
-                #         if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
-                #             # save_checkpoint(
-                #             #     model, epoch, args, best_acc=val_acc_max, optimizer=optimizer, scheduler=scheduler
-                #             # )
-                #             box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer)
-                #
-                # if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
-                #     # save_checkpoint(model, epoch, args, best_acc=val_acc_max, filename="model_final.pt")
-                #     box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer,
-                #                    filename="model_final.pt")
-                # if b_new_best:
-                #     print("Copying to model.pt new best model!!!!")
-                #     shutil.copyfile(os.path.join(args.logdir, "model_final.pt"), os.path.join(args.logdir, "model.pt"))
-
-            if scheduler is not None:
-                scheduler.step()
+        if scheduler is not None:
+            scheduler.step()
 
     print("Training Finished !, Best Accuracy: ", val_acc_max)
 

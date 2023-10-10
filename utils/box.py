@@ -11,6 +11,7 @@ import shutil
 import time
 
 from mlflow import MlflowClient
+from mlflow.models import infer_signature
 
 import utils.vis
 import utils.evl
@@ -28,9 +29,18 @@ from monai.inferers import sliding_window_inference
 
 # 用来规范化保存，日志，可视化等路径
 '''
-:param args: 参数
-:param name: 保存的文件名, 有一个默认训练名字, 如果不指定重复覆盖
-:param mkdir: 是否创建文件夹,默认为True
+运行顺序请遵循
+1. 创建box __init__
+2. 设置模型推理器 set_model_inferer
+3. load_model
+4. 进入box上下文中 __enter__
+
+在train/val中
+    5. start_epoch
+    6. update_in_epoch
+    7. end_epoch_log
+    8. save_model (val)
+9. 退出box上下文中 __exit__
 '''
 
 
@@ -52,6 +62,7 @@ class box:
     def __init__(self, args):
 
         # stop_all_runs()
+
         self.best_acc = -1
         self.default_modelname = None
         self.run_id = None
@@ -76,6 +87,7 @@ class box:
         self.vis_2d_cover = args.vis_2d_cover
         self.vis_3d_cover = args.vis_3d_cover
         self.model_inferer = None
+        self.signatures = None
 
         # 实验模式检查
         if args.train and args.test:
@@ -190,10 +202,10 @@ class box:
                 self.use_vis = True
         self.evler = utils.evl.evl(loader, epoch)
         # 计算loader长度
-        len = 0
-        for i, data in enumerate(loader):
-            len += 1
-        self.loader_len = len
+        lenghtt = 0
+        for i, _ in enumerate(loader):
+            lenghtt += 1
+        self.loader_len = lenghtt
         # if use_vis:
         #     self.writer = SummaryWriter(os.path.join(self.artifact_location, self.run.info.run_id, "log", stage))
 
@@ -222,7 +234,7 @@ class box:
     # self.log(stage, epoch, input, output, target, loss, metric, use_vis)
 
     def update_in_epoch(self, step, out, target, batch_size=-1, stage="train"):
-        print("box updating")
+        # print("box updating")
         # 如果out是概率，我们需要转换成预测, 判断最小值是否为0
         if out.min() < 0:
             out = out < 0
@@ -239,7 +251,7 @@ class box:
         # 如果当前阶段是验证（val）阶段，我们只需要计算和显示参数
         elif stage == "val":
             # with torch.no_grad():
-            metrics_dict = self.evler.update(out, target, batch_size)
+            self.evler.update(out, target, batch_size)
             # 记录和上传参数, val阶段不需要上传参数
             # for metric, value in metrics_dict.items():
             #     mlflow.log_metric(metric, value, step=self.epoch)
@@ -259,6 +271,8 @@ class box:
         for i, data in enumerate(loader):
             first_batch = data
             break
+        if first_batch is None:
+            raise ValueError("first batch is None")
         # 参数
         # 计算参数列表,获取参数
         metrics_dict = self.evler.end_epoch()
@@ -291,6 +305,9 @@ class box:
                     # logits = model(data)
                     if not logits.is_cuda:
                         target = target.cpu()
+
+                    if self.signatures is None:
+                        self.signatures = infer_signature(data, logits)
                 # 可视化
                 if self.vis_2d:
                     utils.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
@@ -348,8 +365,11 @@ class box:
         metrics = self.evler.end_epoch()
         accuracy = metrics['DSC']  # 假设 evler.end_epoch() 返回一个字典，其中包含准确度
 
+        # 记录当前的 epoch
+        mlflow.log_param(f"{filename}_epoch", epoch)
+        mlflow.log_param(f"{filename}_accuracy", accuracy)
         # 使用 mlflow.pytorch.save_model 保存模型
-        mlflow.pytorch.log_model(model, filename, registered_model_name=filename)
+        mlflow.pytorch.log_model(model, filename, registered_model_name=filename, signature=self.signatures)
 
         print("box saving best model")
 
@@ -363,7 +383,50 @@ class box:
             # elif os.path.isdir(best_model_path):  # 如果是目录，使用shutil.rmtree()
             #     shutil.rmtree(best_model_path)
             # 保存最佳模型
-            mlflow.pytorch.log_model(model, filename + "-best", registered_model_name=filename + "_best")
+            mlflow.log_param(f"{filename}_best_epoch", epoch)
+            mlflow.log_param(f"{filename}_best_accuracy", accuracy)
+            mlflow.pytorch.log_model(model, filename + "-best", registered_model_name=filename + "_best",
+                                     signature=self.signatures)
+
+    def load_model(self, model, load_run_id=None, model_version=None, best_model=True, dict=True):
+        # 加载模型
+        # 检查是否应加载模型
+        if not self.args.is_continue:
+            return
+        # 默认从继续运行的run_id中加载模型
+        if load_run_id is None:
+            load_run_id = self.run_id
+        if load_run_id is None:
+            return
+
+        # models:/<model_name>/<model_version>
+        # 从给定run_id获取模型名称
+        # 获取运行的详细信息
+        client = mlflow.tracking.MlflowClient()
+        run = client.get_run(load_run_id)
+        if run is None:
+            raise ValueError("run_id {} not exists".format(load_run_id))
+
+        # 使用运行的名称作为模型名称
+        model_name = run.data.tags['mlflow.runName']
+        if best_model:
+            model_name += "_best"
+
+        # 从模型注册中心加载模型
+        model_uri = f"models:/{model_name}/{model_version}"
+        loaded_model = mlflow.pytorch.load_model(model_uri)
+
+        # 获取模型的批次准确
+        epoch, accuracy = get_model_epoch_and_accuracy(model_name, model_version)
+        print(f"Loaded model: {model_name}, version: {model_version}, epoch: {epoch}, accuracy: {accuracy}")
+
+        # 将加载的模型参数复制到当前模型
+        if dict:
+            model.load_state_dict(loaded_model.state_dict())
+        else:
+            model = loaded_model
+
+        return model, epoch, accuracy
 
     def __enter__(self):
         # global args
@@ -435,3 +498,14 @@ def check_run():
         print(f"A run with UUID {active_run.info.run_id} is already active.")
     else:
         print("No active run.")
+
+
+def get_model_epoch_and_accuracy(model_name, model_version):
+    client = MlflowClient()
+    model_version_details = client.get_model_version(model_name, model_version)
+    run_id = model_version_details.run_id
+    run = client.get_run(run_id)
+    params = run.data.params
+    epoch = params.get(f"{model_name}_epoch")
+    accuracy = params.get(f"{model_name}_accuracy")
+    return epoch, accuracy
