@@ -106,7 +106,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=No
         param.grad = None
     # 计算批次的平均值
     # len是idx的最大值，是数据数除以batch_size然后向上取整
-    box.end_epoch_log(model=model, loader=loader)
+    box.end_epoch()
     # see_loss.print_avr()
     return run_loss.avg
 
@@ -132,8 +132,8 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             if not logits.is_cuda:
                 target = target.cpu()
             # see_loss.update(logits < 0, target)
-            print("data.shape", data.shape)
-            print("logits.shape", logits.shape)
+            # print("data.shape", data.shape)
+            # print("logits.shape", logits.shape)
             # print('here')
             val_labels_list = decollate_batch(target)
             # print('here')
@@ -170,7 +170,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             start_time = time.time()
     # if args.save_to_test:
     #     save_ckpt(model, epoch, args)
-    box.end_epoch_log(model=model, loader=loader)
+    box.end_epoch()
     return avg_acc
 
 
@@ -287,6 +287,7 @@ def run_training(
             # if b_new_best:
             #     print("Copying to model.pt new best model!!!!")
             #     shutil.copyfile(os.path.join(args.logdir, "model_final.pt"), os.path.join(args.logdir, "model.pt"))
+        box.visualizes(model, val_loader)
         box.save_model(model, epoch)
         if scheduler is not None:
             scheduler.step()

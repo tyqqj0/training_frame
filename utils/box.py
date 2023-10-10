@@ -36,10 +36,16 @@ from monai.inferers import sliding_window_inference
 4. 进入box上下文中 __enter__
 
 在train/val中
-    5. start_epoch
-    6. update_in_epoch
-    7. end_epoch_log
-    8. save_model (val)
+    train
+        5. start_epoch
+        6. update_in_epoch
+        7. end_epoch
+    val
+        5. start_epoch
+        6. update_in_epoch
+        7. end_epoch
+    8. visualizes
+    9. save_model
 9. 退出box上下文中 __exit__
 '''
 
@@ -88,6 +94,8 @@ class box:
         self.vis_3d_cover = args.vis_3d_cover
         self.model_inferer = None
         self.signatures = None
+        # self.epoch_start_time = {}
+        self.timer = None
 
         # 实验模式检查
         if args.train and args.test:
@@ -104,7 +112,9 @@ class box:
             swc = input("experiment {} not exists, create it? (y/n)".format(args.exp_name))
             if swc == "y":
                 print("create experiment: ", args.exp_name)
-                mlflow.create_experiment(name=args.exp_name, tags={"mlflow.user": args.user_name, "type": "run_test"})
+                experiment_id = mlflow.create_experiment(name=args.exp_name,
+                                                         tags={"mlflow.user": args.user_name, "type": "run_test"})
+                experiment = mlflow.get_experiment_by_name(experiment_id)
             else:
                 raise ValueError("experiment {} not exists".format(args.exp_name))
 
@@ -194,6 +204,11 @@ class box:
             mlflow.log_param(k, v)
 
     def start_epoch(self, loader, stage, epoch, use_vis=None):
+        # self.epoch_start_time = time.time()
+        if stage is 'train':
+            self.timer = epoch_timer()
+            self.timer.start(epoch)
+        print("box start epoch: ", epoch)
         self.epoch = epoch
         self.epoch_stage = stage
         self.use_vis = use_vis
@@ -262,27 +277,35 @@ class box:
             raise ValueError
 
     # 保存
-    def end_epoch_log(self, model, loader):
+    def end_epoch(self):
         # if use_vis is None:
         #     if self.args.test or (stage is 'val'):
         #         use_vis = True
         # 获取first_batch
+
+        # 参数
+        # 计算参数列表,获取参数
+
+        print('==============================================================')
+        print("box end epoch, epoch: ", self.epoch + 1, " stage: ", self.epoch_stage)
+        metrics_dict = self.evler.end_epoch()
+        print('==============================================================')
+        for metric, value in metrics_dict.items():
+            mlflow.log_metric(self.epoch_stage + '_' + metric, value, step=self.epoch + 1)
+
+        # self.visualizes(loader, model)
+
+    def visualizes(self, loader, model):
         first_batch = None
         for i, data in enumerate(loader):
             first_batch = data
             break
         if first_batch is None:
             raise ValueError("first batch is None")
-        # 参数
-        # 计算参数列表,获取参数
-        metrics_dict = self.evler.end_epoch()
-        for metric, value in metrics_dict.items():
-            mlflow.log_metric(self.epoch_stage + '_' + metric, value, step=self.epoch + 1)
-
         if self.log_frq is not None and self.use_vis:
             if (self.epoch + 1) % self.log_frq == 0:
                 # 显示
-                print("loging epoch: ", self.epoch + 1)
+                print("visualize epoch: ", self.epoch + 1)
                 start_time = time.time()
                 # 测试一次运行的
                 with torch.no_grad():
@@ -320,6 +343,7 @@ class box:
                         filepath = os.path.join(self.vis_2d_cache_loc, filename)
                         if os.path.isfile(filepath):
                             mlflow.log_artifact(filepath, artifact_path="vis_2d")
+                    print('vis_2d complete')
 
                 if self.vis_2d_tb:
                     utils.vis.vis_2d_tensorboard(self.vis_2d_tb_cache_loc, self.epoch, image=data, outputs=logits,
@@ -333,6 +357,7 @@ class box:
                         filepath = os.path.join(self.vis_2d_cache_loc, filename)
                         if os.path.isfile(filepath):
                             mlflow.log_artifact(filepath, artifact_path="vis_2d_tensorboard")
+                    print('vis_2d_tensorboard complete')
 
                 if self.vis_3d:
                     utils.vis.vis_mha(self.vis_3d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
@@ -348,6 +373,7 @@ class box:
                             mlflow.log_artifacts(filepath, artifact_path="vis_3d/" + filename)
                         # if os.path.isfile(filepath):
                         #     mlflow.log_artifacts(filepath, artifact_path="vis_3d/")
+                    print('vis_3d complete')
                 end_time = time.time()
                 print("vis using time: ", end_time - start_time)
 
@@ -388,6 +414,8 @@ class box:
                                      signature=self.signatures)
 
     def load_model(self, model, load_run_id=None, model_version='latest', best_model=True, dict=True):
+        speed = self.timer.end()
+        mlflow.log_metric("epoch/s", speed, step=self.epoch)
         # 加载模型
         # 检查是否应加载模型
         if not self.args.is_continue:
@@ -528,3 +556,29 @@ def get_latest_model_version(model_name):
     else:
         print("model_versions not found")
         return None
+
+
+class epoch_timer:
+    def __init__(self):
+        self.start_time = None
+        self.end_time = None
+        self.epoch = None
+
+        self.speed = None
+
+    def start(self, epoch):
+        print('=' * 25)
+        print("epoch {} start".format(epoch))
+        self.epoch = epoch
+        self.start_time = time.time()
+        print('=' * 25)
+
+    def end(self):
+        self.end_time = time.time()
+        self.speed = 1 / (self.end_time - self.start_time)
+        print('=' * 25)
+        print("epoch {} using time: ".format(self.epoch), self.end_time - self.start_time)
+        print("speed: ", self.end_time - self.start_time, "s/epoch, ", 1 / ((self.end_time - self.start_time) / 3600),
+              "epoch/hour")
+        print('=' * 25)
+        return self.speed
