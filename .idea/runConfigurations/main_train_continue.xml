@@ -13,7 +13,7 @@
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main_train.py" />
-    <option name="PARAMETERS" value="--infer_overlap=0.5 --pretrained_dir='./pretrained_models/' --save_checkpoint --vis_3d --vis_3d -n=traint1 --train --new_run_name=a --is_continue --checkpoint=.\mlruns\models\model_final.pt --run_id=59fc59acd0904aa6b389738c48a6d331" />
+    <option name="PARAMETERS" value="--infer_overlap=0.5 --vis_3d --vis_3d -n=train --train --new_run_name=a --is_continue" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

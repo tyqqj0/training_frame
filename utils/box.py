@@ -306,8 +306,8 @@ class box:
                     if not logits.is_cuda:
                         target = target.cpu()
 
-                    if self.signatures is None:
-                        self.signatures = infer_signature(data, logits)
+                    # if self.signatures is None:
+                    #     self.signatures = infer_signature(data, logits)
                 # 可视化
                 if self.vis_2d:
                     utils.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
@@ -366,15 +366,14 @@ class box:
         accuracy = metrics['DSC']  # 假设 evler.end_epoch() 返回一个字典，其中包含准确度
 
         # 记录当前的 epoch
-        mlflow.log_param(f"{filename}_epoch", epoch)
-        mlflow.log_param(f"{filename}_accuracy", accuracy)
+        mlflow.log_metric(f"{filename}_epoch", epoch)
+        mlflow.log_metric(f"{filename}_accuracy", accuracy)
         # 使用 mlflow.pytorch.save_model 保存模型
         mlflow.pytorch.log_model(model, filename, registered_model_name=filename, signature=self.signatures)
 
-        print("box saving best model")
-
         # 检查是否应更新 best_acc 并保存最佳模型
         if accuracy > self.best_acc:
+            print("box saving best model")
             self.best_acc = accuracy
             # # 删除旧的最佳模型
             # best_model_path = f"{self.artifact_location}/{filename}_best"
@@ -383,16 +382,16 @@ class box:
             # elif os.path.isdir(best_model_path):  # 如果是目录，使用shutil.rmtree()
             #     shutil.rmtree(best_model_path)
             # 保存最佳模型
-            mlflow.log_param(f"{filename}_best_epoch", epoch)
-            mlflow.log_param(f"{filename}_best_accuracy", accuracy)
+            mlflow.log_metric(f"{filename}_best_epoch", epoch)
+            mlflow.log_metric(f"{filename}_best_accuracy", accuracy)
             mlflow.pytorch.log_model(model, filename + "-best", registered_model_name=filename + "_best",
                                      signature=self.signatures)
 
-    def load_model(self, model, load_run_id=None, model_version=None, best_model=True, dict=True):
+    def load_model(self, model, load_run_id=None, model_version='latest', best_model=True, dict=True):
         # 加载模型
         # 检查是否应加载模型
         if not self.args.is_continue:
-            return
+            return model, 0, -1
         # 默认从继续运行的run_id中加载模型
         if load_run_id is None:
             load_run_id = self.run_id
@@ -413,8 +412,14 @@ class box:
             model_name += "_best"
 
         # 从模型注册中心加载模型
+        print("loading model")
         model_uri = f"models:/{model_name}/{model_version}"
         loaded_model = mlflow.pytorch.load_model(model_uri)
+        print("model load complete")
+
+        if model_version is 'latest':
+            model_version = get_latest_model_version(model_name)
+            # model_version = [model_version, "latest"]
 
         # 获取模型的批次准确
         epoch, accuracy = get_model_epoch_and_accuracy(model_name, model_version)
@@ -505,7 +510,21 @@ def get_model_epoch_and_accuracy(model_name, model_version):
     model_version_details = client.get_model_version(model_name, model_version)
     run_id = model_version_details.run_id
     run = client.get_run(run_id)
-    params = run.data.params
-    epoch = params.get(f"{model_name}_epoch")
-    accuracy = params.get(f"{model_name}_accuracy")
+    metrics = run.data.metrics
+    epoch = metrics.get(f"{model_name}_epoch")
+    accuracy = metrics.get(f"{model_name}_accuracy")
+    if epoch is None:
+        epoch = 0
+    if accuracy is None:
+        accuracy = -1
     return epoch, accuracy
+
+
+def get_latest_model_version(model_name):
+    client = MlflowClient()
+    model_versions = client.get_latest_versions(model_name)
+    if model_versions:
+        return int(model_versions[0].version)
+    else:
+        print("model_versions not found")
+        return None

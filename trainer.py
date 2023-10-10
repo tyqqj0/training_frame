@@ -269,7 +269,7 @@ def run_training(
                 )
                 # if box.writer is not None:
                 #     box.writer.add_scalar("val_acc", val_avg_acc, epoch)
-                box.save_model(model, epoch)
+
             #     if val_avg_acc > val_acc_max:
             #         print("new best ({:.6f} --> {:.6f}). ".format(val_acc_max, val_avg_acc))
             #         val_acc_max = val_avg_acc
@@ -287,7 +287,7 @@ def run_training(
             # if b_new_best:
             #     print("Copying to model.pt new best model!!!!")
             #     shutil.copyfile(os.path.join(args.logdir, "model_final.pt"), os.path.join(args.logdir, "model.pt"))
-
+        box.save_model(model, epoch)
         if scheduler is not None:
             scheduler.step()
 
