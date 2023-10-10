@@ -114,7 +114,7 @@ class box:
                 print("create experiment: ", args.exp_name)
                 experiment_id = mlflow.create_experiment(name=args.exp_name,
                                                          tags={"mlflow.user": args.user_name, "type": "run_test"})
-                experiment = mlflow.get_experiment_by_name(experiment_id)
+                experiment = mlflow.get_experiment(experiment_id)
             else:
                 raise ValueError("experiment {} not exists".format(args.exp_name))
 

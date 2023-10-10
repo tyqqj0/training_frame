@@ -32,7 +32,7 @@ parser.add_argument("-i", "--run_id", type=str, default=None,
 parser.add_argument("-c", "--is_continue", action="store_true", help="continue training")
 parser.add_argument("--train", action="store_true", help="train mode")
 parser.add_argument("--test", action="store_true", help="test mode")
-parser.add_argument("--new_run_name", type=str, default=None, help="new run name")
+parser.add_argument('-nrn', "--new_run_name", type=str, default=None, help="new run name")
 parser.add_argument("--log_dir", type=str, default="./runs", help="log dir")
 # parser.add_argument("--artifact_dir", type=str, default="./artifacts", help="artifact dir")
 parser.add_argument("--tag_id", type=str, default=None, help="tag id, ***commanded to set***")

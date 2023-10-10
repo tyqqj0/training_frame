@@ -37,7 +37,7 @@ def vis_2d(path, epoch, image, outputs, label=None, add_text='', rank=0):
     # 缩放范围到0-1
     img = (img - img.min()) / (img.max() - img.min())
     out = (out - out.min()) / (out.max() - out.min())
-    out_class = (out_class - out_class.min()) / (out_class.max() - out_class.min())
+    # out_class = (out_class - out_class.min()) / (out_class.max() - out_class.min())
     lb = (lb - lb.min()) / (lb.max() - lb.min())
 
     img = img.unsqueeze(0)
