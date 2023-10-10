@@ -431,7 +431,7 @@ class box:
         else:
             model = loaded_model
 
-        return model, epoch, accuracy
+        return model, int(epoch), accuracy
 
     def __enter__(self):
         # global args

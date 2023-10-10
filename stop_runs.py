@@ -14,7 +14,7 @@ def stop_all_runs():
     # 创建一个 MlflowClient 实例
     client = MlflowClient()
     # 获取所有的运行
-    experiment_id = client.get_experiment_by_name("traint1").experiment_id
+    experiment_id = client.get_experiment_by_name("train").experiment_id
     runs = client.search_runs(experiment_ids=[experiment_id])
     print("experiment_id:", experiment_id)
     # 遍历所有的运行

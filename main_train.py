@@ -37,7 +37,7 @@ parser.add_argument("--log_dir", type=str, default="./runs", help="log dir")
 # parser.add_argument("--artifact_dir", type=str, default="./artifacts", help="artifact dir")
 parser.add_argument("--tag_id", type=str, default=None, help="tag id, ***commanded to set***")
 parser.add_argument("--log_frq", type=int, default=250, help="log frequency")
-parser.add_argument("--val_frq", type=int, default=15, help="val frequency")
+parser.add_argument("--val_frq", type=int, default=5, help="val frequency")
 parser.add_argument("--save_frq", type=int, default=250,
                     help="save frequency, disabled in test and val")  # 目前是控制在弄val的频率
 
