@@ -286,10 +286,10 @@ class box:
         # 参数
         # 计算参数列表,获取参数
 
-        print('==============================================================')
+        print_line('up')
         print("box end epoch, epoch: ", self.epoch + 1, " stage: ", self.epoch_stage)
         metrics_dict = self.evler.end_epoch()
-        print('==============================================================')
+        print_line('down')
         for metric, value in metrics_dict.items():
             mlflow.log_metric(self.epoch_stage + '_' + metric, value, step=self.epoch + 1)
 
@@ -568,18 +568,35 @@ class epoch_timer:
         self.speed = None
 
     def start(self, epoch):
-        print('=' * 25)
+        print_line('up')
         print("epoch {} start".format(epoch))
         self.epoch = epoch
         self.start_time = time.time()
-        print('=' * 25)
+        print_line('down')
 
     def end(self):
         self.end_time = time.time()
         self.speed = 1 / (self.end_time - self.start_time)
-        print('=' * 25)
+        print_line('up')
         print("epoch {} using time: ".format(self.epoch), self.end_time - self.start_time)
         print("speed: ", self.end_time - self.start_time, "s/epoch, ", 1 / ((self.end_time - self.start_time) / 3600),
               "epoch/hour")
-        print('=' * 25)
+        print_line('down')
         return self.speed
+
+
+# ===========================
+# ...........................
+# absadsasdasd
+# ...........................
+# ===========================
+def print_line(up_or_down, len=65):
+    if up_or_down == 'up' or up_or_down == 0:
+        print('=' * len)
+        print('.' * len)
+    elif up_or_down == 'down' or up_or_down == 1:
+        print('.' * len)
+        print('=' * len)
+    else:
+        print('Invalid input')
+        raise ValueError
