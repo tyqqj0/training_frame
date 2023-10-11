@@ -54,17 +54,26 @@ def vis_2d(path, epoch, image, outputs, label=None, add_text='', rank=0):
         print('lb.shape', lb.shape)
         # print('combined.shape', combined.shape)
 
-    # 将图像之间画上分割线
-    line = torch.ones(1, img.shape[2], 1).cuda(rank)
-    combined = torch.cat((img, line, out, line, out_class, line, lb), 2)
-    # Now we have the original image, the model's prediction, and the Grad-CAM result
-    # We can add them to TensorBoard
+    # 将 PyTorch tensor 转换为 numpy array
+    img_np = img.squeeze().cpu().numpy()
+    out_np = out.squeeze().cpu().numpy()
+    out_class_np = out_class.squeeze().cpu().numpy()
+    lb_np = lb.squeeze().cpu().numpy()
 
-    tb_dir = os.path.join(path)
-    if not os.path.exists(tb_dir):
-        os.makedirs(tb_dir)
+    # 创建一个 1x4 的子图，每个图像都有自己的小标题
+    fig, axs = plt.subplots(1, 4, figsize=(20, 5))
+    axs[0].imshow(img_np, cmap='gray')
+    axs[0].set_title('Image')
+    axs[1].imshow(out_np, cmap='gray')
+    axs[1].set_title('Output Probability')
+    axs[2].imshow(out_class_np, cmap='gray')
+    axs[2].set_title('Output Class')
+    axs[3].imshow(lb_np, cmap='gray')
+    axs[3].set_title('Label')
 
-    save_image(combined, os.path.join(path, f'combined{add_text}_{epoch}.png'))
+    # 保存整个子图
+    plt.savefig(os.path.join(path, f'combined{add_text}_{epoch}.png'))
+    plt.close()
 
 
 def vis_2d_tensorboard(path, epoch, image, outputs, label=None, add_text='', rank=0):

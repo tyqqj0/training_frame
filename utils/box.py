@@ -379,7 +379,7 @@ class box:
 
     def save_model(self, model, epoch, filename=None):
         speed = self.timer.end()
-        mlflow.log_metric("epoch/s", speed, step=self.epoch)
+        mlflow.log_metric("epoch/h", speed, step=self.epoch)
         print("box saving model")
         if filename is None:
             filename = self.default_modelname
@@ -576,7 +576,7 @@ class epoch_timer:
 
     def end(self):
         self.end_time = time.time()
-        self.speed = 1 / (self.end_time - self.start_time)
+        self.speed = 1 / (self.end_time - self.start_time) * 3600
         print_line('up')
         print("epoch {} using time: ".format(self.epoch), self.end_time - self.start_time)
         print("speed: ", self.end_time - self.start_time, "s/epoch, ", 1 / ((self.end_time - self.start_time) / 3600),
