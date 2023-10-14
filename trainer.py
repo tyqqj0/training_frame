@@ -59,7 +59,7 @@ class AverageMeter(object):
 
 def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=None):
     model.train()
-    box.start_epoch(loader=loader, stage='train', epoch=epoch)
+    box.start_epoch(loader=loader, stage='train', epoch=epoch, use_vis=False)
     start_time = time.time()
     run_loss = AverageMeter()
     # see_loss = evl(loader, epoch=epoch)
@@ -89,7 +89,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=No
             )
         else:
             run_loss.update(loss.item(), n=args.batch_size)
-        box.update_in_epoch(out=logits, target=target, stage='train')
+        box.update_in_epoch(step=idx, out=logits, target=target, stage='train')
         # print(logits.shape, target.shape)
         # if not args.test:
         #     box.vis(epoch, args, data, logits, target)
@@ -106,7 +106,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=No
         param.grad = None
     # 计算批次的平均值
     # len是idx的最大值，是数据数除以batch_size然后向上取整
-    box.end_epoch(model=model, epoch=epoch, stage='train')
+    box.end_epoch()
     # see_loss.print_avr()
     return run_loss.avg
 
@@ -132,8 +132,8 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             if not logits.is_cuda:
                 target = target.cpu()
             # see_loss.update(logits < 0, target)
-            print("data.shape", data.shape)
-            print("logits.shape", logits.shape)
+            # print("data.shape", data.shape)
+            # print("logits.shape", logits.shape)
             # print('here')
             val_labels_list = decollate_batch(target)
             # print('here')
@@ -145,7 +145,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             # if args.test:
             # 可视化
             # box.vis(epoch, args, data, logits, target, add_text='val')
-            box.update_in_epoch(out=logits, target=target, stage='val')
+            box.update_in_epoch(step=idx, out=logits, target=target, stage='val')
 
             acc = acc_func(y_pred=val_output_convert, y=val_labels_convert)
             acc = acc.cuda(args.rank)
@@ -170,7 +170,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             start_time = time.time()
     # if args.save_to_test:
     #     save_ckpt(model, epoch, args)
-    box.end_epoch(model=model, epoch=epoch, stage='val')
+    box.end_epoch()
     return avg_acc
 
 
@@ -217,6 +217,7 @@ def run_training(
     else:
         max_epochs = args.max_epochs
     print("max_epoch", max_epochs)
+
     for epoch in range(start_epoch, max_epochs):
         if args.distributed:
             train_loader.sampler.set_epoch(epoch)
@@ -234,8 +235,8 @@ def run_training(
                 "loss: {:.4f}".format(train_loss),
                 "time {:.2f}s".format(time.time() - epoch_time),
             )
-        if args.rank == 0 and box.writer is not None:
-            box.writer.add_scalar("train_loss", train_loss, epoch)
+        # if args.rank == 0 and box.writer is not None:
+        #     box.writer.add_scalar("train_loss", train_loss, epoch)
         b_new_best = False
 
         # if (epoch + 1) % args.vis_every == 0:
@@ -257,6 +258,7 @@ def run_training(
                 args=args,
                 post_label=post_label,
                 post_pred=post_pred,
+                box=box
             )
             if args.rank == 0:
                 print(
@@ -265,25 +267,28 @@ def run_training(
                     val_avg_acc,
                     "time {:.2f}s".format(time.time() - epoch_time),
                 )
-                if box.writer is not None:
-                    box.writer.add_scalar("val_acc", val_avg_acc, epoch)
-                if val_avg_acc > val_acc_max:
-                    print("new best ({:.6f} --> {:.6f}). ".format(val_acc_max, val_avg_acc))
-                    val_acc_max = val_avg_acc
-                    b_new_best = True
-                    if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
-                        # save_checkpoint(
-                        #     model, epoch, args, best_acc=val_acc_max, optimizer=optimizer, scheduler=scheduler
-                        # )
-                        box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer)
+                # if box.writer is not None:
+                #     box.writer.add_scalar("val_acc", val_avg_acc, epoch)
 
-            if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
-                # save_checkpoint(model, epoch, args, best_acc=val_acc_max, filename="model_final.pt")
-                box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer, filename="model_final.pt")
-                if b_new_best:
-                    print("Copying to model.pt new best model!!!!")
-                    shutil.copyfile(os.path.join(args.logdir, "model_final.pt"), os.path.join(args.logdir, "model.pt"))
-
+            #     if val_avg_acc > val_acc_max:
+            #         print("new best ({:.6f} --> {:.6f}). ".format(val_acc_max, val_avg_acc))
+            #         val_acc_max = val_avg_acc
+            #         b_new_best = True
+            #         if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
+            #             # save_checkpoint(
+            #             #     model, epoch, args, best_acc=val_acc_max, optimizer=optimizer, scheduler=scheduler
+            #             # )
+            #             box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer)
+            #
+            # if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
+            #     # save_checkpoint(model, epoch, args, best_acc=val_acc_max, filename="model_final.pt")
+            #     box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer,
+            #                    filename="model_final.pt")
+            # if b_new_best:
+            #     print("Copying to model.pt new best model!!!!")
+            #     shutil.copyfile(os.path.join(args.logdir, "model_final.pt"), os.path.join(args.logdir, "model.pt"))
+        box.visualizes(model, val_loader)
+        box.save_model(model, epoch)
         if scheduler is not None:
             scheduler.step()
 

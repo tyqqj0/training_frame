@@ -1,4 +1,3 @@
-
 import argparse
 import os
 from functools import partial
@@ -33,32 +32,35 @@ parser.add_argument("-i", "--run_id", type=str, default=None,
 parser.add_argument("-c", "--is_continue", action="store_true", help="continue training")
 parser.add_argument("--train", action="store_true", help="train mode")
 parser.add_argument("--test", action="store_true", help="test mode")
-parser.add_argument("--new_run_name", type=str, default=None, help="new run name")
+parser.add_argument('-nrn', "--new_run_name", type=str, default=None, help="new run name")
 parser.add_argument("--log_dir", type=str, default="./runs", help="log dir")
 # parser.add_argument("--artifact_dir", type=str, default="./artifacts", help="artifact dir")
 parser.add_argument("--tag_id", type=str, default=None, help="tag id, ***commanded to set***")
-parser.add_argument("--log_frq", type=int, default=10, help="log frequency")
-parser.add_argument("--save_frq", type=int, default=10, help="save frequency, disabled in test and val")
+parser.add_argument("--log_frq", type=int, default=250, help="log frequency")
+parser.add_argument("--val_frq", type=int, default=5, help="val frequency")
+parser.add_argument("--save_frq", type=int, default=250,
+                    help="save frequency, disabled in test and val")  # 目前是控制在弄val的频率
 
 parser.add_argument("--user_name", type=str, default="tyqqj", help="user name")
 
-parser.add_argument("--vis_3d", action="store_true", help="visualize 3d images")
 parser.add_argument("--vis_2d", action="store_true", help="visualize 2d images")
+parser.add_argument("--vis_3d", action="store_true", help="visualize 3d images")
+parser.add_argument("--vis_2d_tb", action="store_true", help="visualize 2d tensorboard images")
+
 # 覆盖保存显示, 控制可视化是保留最新还是保留每个epoch
 parser.add_argument("--vis_2d_cover", action="store_true", help="visualize 2d images")
 parser.add_argument("--vis_3d_cover", action="store_true", help="visualize 3d images")
 
-
 run_parser = parser.add_argument_group('run')
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
 # parser.add_argument("--vis_dir", default="./runs/", type=str, help="dataset directory")
-# parser.add_argument("--logdir", default="test", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="test", type=str, help="directory to save the tensorboard logs")
 # parser.add_argument("--test", action="store_true", help="test mode")
 # loger参数
 # parser.add_argument("--box_root", default="./run", type=str, help="training box root")
 # parser.add_argument("--vis", action="store_true", help="visualize training")
 # parser.add_argument("--vis3d", action="store_true", help="visualize training")
-
+########################################################################################################
 # 数据位置参数
 parser.add_argument(
     "--pretrained_dir", default="./pretrained_models/", type=str, help="pretrained checkpoint directory"
@@ -81,7 +83,7 @@ parser.add_argument("--test_mode", action="store_true", help="test mode")
 
 parser.add_argument("--amt", default=-1, type=int, help="data amount")
 parser.add_argument("--save_checkpoint", action="store_true", help="save checkpoint during training")
-parser.add_argument("--max_epochs", default=2000, type=int, help="max number of training epochs")
+parser.add_argument("--max_epochs", default=6000, type=int, help="max number of training epochs")
 parser.add_argument("--batch_size", default=6, type=int, help="number of batch size")
 parser.add_argument("--sw_batch_size", default=1, type=int, help="number of sliding window batch size")
 parser.add_argument("--optim_lr", default=1e-4, type=float, help="optimization learning rate")
@@ -141,6 +143,8 @@ def main():
     '''
     #
     args = parser.parse_args()
+    # 暂时更改的区域
+    args.val_every = args.val_frq
     args.amp = not args.noamp
     args.logdir = "./runs/" + args.logdir
     if args.save_to_test:
@@ -203,6 +207,7 @@ def main_worker(gpu, args):
     else:
         raise ValueError("Unsupported model " + str(args.model_name))
 
+    logrbox.set_model_inferer(model)
     dice_loss = DiceCELoss(
         to_onehot_y=args.out_channels, softmax=True, squared_pred=True, smooth_nr=args.smooth_nr,
         smooth_dr=args.smooth_dr
@@ -221,73 +226,75 @@ def main_worker(gpu, args):
 
     pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print("Total parameters count", pytorch_total_params)
+    with logrbox as run:
+        best_acc = 0
+        start_epoch = 0
 
-    best_acc = 0
-    start_epoch = 0
+        # if args.checkpoint is not None:
+        #     checkpoint = torch.load(args.checkpoint, map_location="cpu")
+        #     from collections import OrderedDict
+        #
+        #     new_state_dict = OrderedDict()
+        #     for k, v in checkpoint["state_dict"].items():
+        #         new_state_dict[k.replace("backbone.", "")] = v
+        #     model.load_state_dict(new_state_dict, strict=False)
+        #     if "epoch" in checkpoint:
+        #         start_epoch = checkpoint["epoch"]
+        #     if "best_acc" in checkpoint:
+        #         best_acc = checkpoint["best_acc"]
+        #     print("=> loaded checkpoint '{}' (epoch {}) (bestacc {})".format(args.checkpoint, start_epoch, best_acc))
+        model, start_epoch, best_acc = logrbox.load_model(model)
 
-    if args.checkpoint is not None:
-        checkpoint = torch.load(args.checkpoint, map_location="cpu")
-        from collections import OrderedDict
-
-        new_state_dict = OrderedDict()
-        for k, v in checkpoint["state_dict"].items():
-            new_state_dict[k.replace("backbone.", "")] = v
-        model.load_state_dict(new_state_dict, strict=False)
-        if "epoch" in checkpoint:
-            start_epoch = checkpoint["epoch"]
-        if "best_acc" in checkpoint:
-            best_acc = checkpoint["best_acc"]
-        print("=> loaded checkpoint '{}' (epoch {}) (bestacc {})".format(args.checkpoint, start_epoch, best_acc))
-
-    model.cuda(args.gpu)
-
-    if args.distributed:
-        torch.cuda.set_device(args.gpu)
-        if args.norm_name == "batch":
-            model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model.cuda(args.gpu)
-        model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[args.gpu], output_device=args.gpu, find_unused_parameters=True
-        )
-    if args.optim_name == "adam":
-        optimizer = torch.optim.Adam(model.parameters(), lr=args.optim_lr, weight_decay=args.reg_weight)
-    elif args.optim_name == "adamw":
-        optimizer = torch.optim.AdamW(model.parameters(), lr=args.optim_lr, weight_decay=args.reg_weight)
-    elif args.optim_name == "sgd":
-        optimizer = torch.optim.SGD(
-            model.parameters(), lr=args.optim_lr, momentum=args.momentum, nesterov=True, weight_decay=args.reg_weight
-        )
-    else:
-        raise ValueError("Unsupported Optimization Procedure: " + str(args.optim_name))
 
-    if args.lrschedule == "warmup_cosine":
-        scheduler = LinearWarmupCosineAnnealingLR(
-            optimizer, warmup_epochs=args.warmup_epochs, max_epochs=args.max_epochs
-        )
-    elif args.lrschedule == "cosine_anneal":
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.max_epochs)
-        if args.checkpoint is not None:
-            scheduler.step(epoch=start_epoch)
-    else:
-        scheduler = None
+        if args.distributed:
+            torch.cuda.set_device(args.gpu)
+            if args.norm_name == "batch":
+                model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+            model.cuda(args.gpu)
+            model = torch.nn.parallel.DistributedDataParallel(
+                model, device_ids=[args.gpu], output_device=args.gpu, find_unused_parameters=True
+            )
+        if args.optim_name == "adam":
+            optimizer = torch.optim.Adam(model.parameters(), lr=args.optim_lr, weight_decay=args.reg_weight)
+        elif args.optim_name == "adamw":
+            optimizer = torch.optim.AdamW(model.parameters(), lr=args.optim_lr, weight_decay=args.reg_weight)
+        elif args.optim_name == "sgd":
+            optimizer = torch.optim.SGD(
+                model.parameters(), lr=args.optim_lr, momentum=args.momentum, nesterov=True,
+                weight_decay=args.reg_weight
+            )
+        else:
+            raise ValueError("Unsupported Optimization Procedure: " + str(args.optim_name))
 
-    accuracy = run_training(  # 训练
-        model=model,
-        train_loader=loader[0],
-        val_loader=loader[1],
-        optimizer=optimizer,
-        loss_func=dice_loss,
-        acc_func=dice_acc,
-        args=args,
-        model_inferer=model_inferer,
-        scheduler=scheduler,
-        start_epoch=start_epoch,
-        post_label=post_label,
-        post_pred=post_pred,
-        box = logrbox
-    )
-    if args.save_to_test:
-        model.save(args)
+        if args.lrschedule == "warmup_cosine":
+            scheduler = LinearWarmupCosineAnnealingLR(
+                optimizer, warmup_epochs=args.warmup_epochs, max_epochs=args.max_epochs
+            )
+        elif args.lrschedule == "cosine_anneal":
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.max_epochs)
+            if args.checkpoint is not None:
+                scheduler.step(epoch=start_epoch)
+        else:
+            scheduler = None
+
+        accuracy = run_training(  # 训练
+            model=model,
+            train_loader=loader[0],
+            val_loader=loader[1],
+            optimizer=optimizer,
+            loss_func=dice_loss,
+            acc_func=dice_acc,
+            args=args,
+            model_inferer=model_inferer,
+            scheduler=scheduler,
+            start_epoch=start_epoch,
+            post_label=post_label,
+            post_pred=post_pred,
+            box=logrbox
+        )
+        if args.save_to_test:
+            model.save(args)
     return accuracy
 
 

@@ -95,7 +95,7 @@ def main_worker(args):
             # 保存模型参数
             model = None
             last_batch = None
-            run_box.end_epoch_log(model, last_batch, i)
+            run_box.end_epoch(model, last_batch, i)
         mlflow.log_param("epochs", args.max_epochs)
         mlflow.log_param("batch_size", args.batch_size)
 
