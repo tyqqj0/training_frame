@@ -4,15 +4,9 @@ import glob
 from tqdm import tqdm
 import SimpleITK as sitk
 
-from utils.train_metrics import metrics3d
-from skimage import filters
-import evl
-
-import torch.nn as nn
-
 os.environ['CUDA_VISIBLE_DEVICES'] = "0"
 
-import torch, gc
+import torch
 
 # 参数
 args = {

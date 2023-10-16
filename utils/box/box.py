@@ -6,24 +6,22 @@
 # @Aim
 
 import os
-import re
 import shutil
 import time
+import json
+import argparse
 
 from mlflow import MlflowClient
-from mlflow.models import infer_signature
 
-import utils.vis
-import utils.evl
+import utils.box.vis
+import utils.box.evl
 
-import numpy as np
 import torch
 import mlflow
 import mlflow.pytorch
-from tensorboardX import SummaryWriter
 from monai import __version__
 
-from torch.cuda.amp import GradScaler, autocast
+from torch.cuda.amp import autocast
 from functools import partial
 from monai.inferers import sliding_window_inference
 
@@ -48,6 +46,39 @@ from monai.inferers import sliding_window_inference
     9. save_model
 9. 退出box上下文中 __exit__
 '''
+
+
+def parser_cfg_loader(parser, mode, path=""):
+    if path != "":
+        cfg = json.load(open(path, 'r'))
+    else:
+        if mode == "train":
+            cfg = json.load(open(os.path.join('./cfg', 'train.json'), 'r'))
+        elif mode == "test":
+            cfg = json.load(open(os.path.join('./cfg', 'test.json'), 'r'))
+        else:
+            raise ValueError("invalid mode")
+    parser.add_argument("-c", "--is_continue", action="store_true", default=cfg["is_continue"],
+                        help="continue training")
+    parser.add_argument("-n", "--exp_name", type=str, default=cfg["exp_name"],
+                        help="experiment name, ***must be set***")
+    parser.add_argument("-i", "--run_id", type=str, default=cfg["run_id"],
+                        help="run id, ***must be set when test or is_continue, only for continue training***")
+    parser.add_argument('-nrn', "--new_run_name", type=str, default=cfg["new_run_name"], help="new run name")
+    parser.add_argument("--log_dir", type=str, default=cfg["log_dir"], help="log dir")
+    parser.add_argument("--tag_id", type=str, default=cfg["tag_id"], help="tag id, ***commanded to set***")
+    parser.add_argument("--log_frq", type=int, default=cfg["log_frq"], help="log frequency")
+    parser.add_argument("--val_frq", type=int, default=cfg["val_frq"], help="val frequency")
+    parser.add_argument("--save_frq", type=int, default=cfg["save_frq"],
+                        help="save frequency, disabled in test and val")
+    parser.add_argument("--user_name", type=str, default=cfg["user_name"], help="user name")
+    parser.add_argument("--vis_2d", action="store_true", default=cfg["vis_2d"], help="visualize 2d images")
+    parser.add_argument("--vis_3d", action="store_true", default=cfg["vis_3d"], help="visualize 3d images")
+    parser.add_argument("--vis_3d_frq", type=int, default=cfg["vis_3d_frq"], help="visualize 3d images frequency")
+    parser.add_argument("--vis_2d_tb", action="store_true", default=cfg["vis_2d_tb"],
+                        help="visualize 2d tensorboard images")
+
+    return parser
 
 
 # def save_checkpoint(net, optimizer, epoch, loss, metric):
@@ -97,6 +128,9 @@ class box:
         # self.epoch_start_time = {}
         self.timer = None
 
+        print_line('up')
+        print("Initializing box")
+
         # 实验模式检查
         if args.train and args.test:
             raise ValueError("Cannot set both train and test to True")
@@ -104,6 +138,7 @@ class box:
         if args.is_continue and not args.train:
             raise ValueError("Cannot set is_continue to True when train is False")
 
+        print('set mlflow')
         # mlflow 实验设定
         mlflow.set_tracking_uri("http://localhost:5000")
         # print()
@@ -181,6 +216,8 @@ class box:
 
         # 置入内部参数
         self.artifact_location = experiment.artifact_location
+        print('Initializing box complete')
+        print_line('down')
 
     def set_model_inferer(self, model):
         print("set model inferer")
@@ -215,7 +252,7 @@ class box:
         if use_vis is None:
             if self.args.test or (stage is 'val'):
                 self.use_vis = True
-        self.evler = utils.evl.evl(loader, epoch)
+        self.evler = utils.box.evl.evl(loader, epoch)
         # 计算loader长度
         lenghtt = 0
         for i, _ in enumerate(loader):
@@ -333,8 +370,8 @@ class box:
                     #     self.signatures = infer_signature(data, logits)
                 # 可视化
                 if self.vis_2d:
-                    utils.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
-                                     add_text=self.epoch_stage, rank=self.rank)
+                    utils.box.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
+                                         add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
                     if not os.path.exists(self.vis_2d_cache_loc):
                         raise ValueError("vis_2d_cache_loc not exists")
@@ -346,9 +383,9 @@ class box:
                     print('vis_2d complete')
 
                 if self.vis_2d_tb:
-                    utils.vis.vis_2d_tensorboard(self.vis_2d_tb_cache_loc, self.epoch, image=data, outputs=logits,
-                                                 label=target,
-                                                 add_text=self.epoch_stage, rank=self.rank)
+                    utils.box.vis.vis_2d_tensorboard(self.vis_2d_tb_cache_loc, self.epoch, image=data, outputs=logits,
+                                                     label=target,
+                                                     add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
                     if not os.path.exists(self.vis_2d_cache_loc):
                         raise ValueError("vis_2d_tb_cache_loc not exists")
@@ -360,8 +397,8 @@ class box:
                     print('vis_2d_tensorboard complete')
 
                 if self.vis_3d:
-                    utils.vis.vis_mha(self.vis_3d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
-                                      add_text=self.epoch_stage, rank=self.rank)
+                    utils.box.vis.vis_mha(self.vis_3d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
+                                          add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
                     if not os.path.exists(self.vis_3d_cache_loc):
                         raise ValueError("vis_3d_cache_loc not exists")

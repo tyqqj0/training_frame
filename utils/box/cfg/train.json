@@ -1,0 +1,18 @@
+{
+  "exp_name": "train",
+  "run_id": null,
+  "is_continue": false,
+  "train": true,
+  "test": false,
+  "new_run_name": null,
+  "log_dir": "./runs",
+  "tag_id": null,
+  "log_frq": 250,
+  "val_frq": 5,
+  "save_frq": 500,
+  "user_name": "tyqqj",
+  "vis_2d": true,
+  "vis_3d": false,
+  "vis_3d_frq" : 500,
+  "vis_2d_tb": false,
+}

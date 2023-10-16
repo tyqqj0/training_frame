@@ -8,9 +8,8 @@
 import numpy as np
 import torch
 from torch.utils import data
-from torch import nn
 
-import utils.train_metrics
+import utils.box.train_metrics
 
 
 # 指标列表的类，实现返回参数值与字典，输出的功能
@@ -52,7 +51,7 @@ class evl:
     def update(self, out, target, batch_size=-1):
         if batch_size == -1:
             batch_size = out.shape[0]
-        acc, sen, spe, iou, dsc, pre = utils.train_metrics.metrics3d(out, target, batch_size)
+        acc, sen, spe, iou, dsc, pre = utils.box.train_metrics.metrics3d(out, target, batch_size)
         self.ACC.append(acc)
         self.SEN.append(sen)
         self.SPE.append(spe)

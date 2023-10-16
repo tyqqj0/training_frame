@@ -10,23 +10,14 @@
 # limitations under the License.
 
 import os
-import shutil
 import time
 
 import numpy as np
 import torch
 import torch.nn.parallel
 import torch.utils.data.distributed
-from tensorboardX import SummaryWriter
 from torch.cuda.amp import GradScaler, autocast
 from utils.utils import distributed_all_gather
-from monai.visualize import blend_images, matshow3d, plot_2d_or_3d_image
-from torch.utils.tensorboard import SummaryWriter
-from monai.visualize import GradCAM
-from utils.utils import save_ckpt
-
-from utils.evl import evl
-import utils.vis as vis
 
 from monai.data import decollate_batch
 

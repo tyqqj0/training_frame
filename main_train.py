@@ -24,54 +24,16 @@ from monai import __version__
 
 # 基础参数
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
+
 # mlflow 基础参数
-mlflow_parser = parser.add_argument_group('mlflow')
-parser.add_argument("-n", "--exp_name", type=str, default=None, help="experiment name, ***must be set***")
-parser.add_argument("-i", "--run_id", type=str, default=None,
-                    help="run id, ***must be set when test or is_continue, only for continue training***")
-parser.add_argument("-c", "--is_continue", action="store_true", help="continue training")
+mlflow_parser = parser.add_argument_group('box_mlflow')
 parser.add_argument("--train", action="store_true", help="train mode")
 parser.add_argument("--test", action="store_true", help="test mode")
-parser.add_argument('-nrn', "--new_run_name", type=str, default=None, help="new run name")
-parser.add_argument("--log_dir", type=str, default="./runs", help="log dir")
-# parser.add_argument("--artifact_dir", type=str, default="./artifacts", help="artifact dir")
-parser.add_argument("--tag_id", type=str, default=None, help="tag id, ***commanded to set***")
-parser.add_argument("--log_frq", type=int, default=250, help="log frequency")
-parser.add_argument("--val_frq", type=int, default=5, help="val frequency")
-parser.add_argument("--save_frq", type=int, default=250,
-                    help="save frequency, disabled in test and val")  # 目前是控制在弄val的频率
-
-parser.add_argument("--user_name", type=str, default="tyqqj", help="user name")
-
-parser.add_argument("--vis_2d", action="store_true", help="visualize 2d images")
-parser.add_argument("--vis_3d", action="store_true", help="visualize 3d images")
-parser.add_argument("--vis_2d_tb", action="store_true", help="visualize 2d tensorboard images")
-
-# 覆盖保存显示, 控制可视化是保留最新还是保留每个epoch
-parser.add_argument("--vis_2d_cover", action="store_true", help="visualize 2d images")
-parser.add_argument("--vis_3d_cover", action="store_true", help="visualize 3d images")
+parser = box.parser_cfg_loader(parser, 'train' if parser.parse_args().train else 'test')
 
 run_parser = parser.add_argument_group('run')
-parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-# parser.add_argument("--vis_dir", default="./runs/", type=str, help="dataset directory")
-parser.add_argument("--logdir", default="test", type=str, help="directory to save the tensorboard logs")
-# parser.add_argument("--test", action="store_true", help="test mode")
-# loger参数
-# parser.add_argument("--box_root", default="./run", type=str, help="training box root")
-# parser.add_argument("--vis", action="store_true", help="visualize training")
-# parser.add_argument("--vis3d", action="store_true", help="visualize training")
+
 ########################################################################################################
-# 数据位置参数
-parser.add_argument(
-    "--pretrained_dir", default="./pretrained_models/", type=str, help="pretrained checkpoint directory"
-)
-parser.add_argument("--data_dir", default="D:/zhangchaoran/miccai_achieve/data/train/", type=str,
-                    help="dataset directory")
-parser.add_argument("--val_dir", default="D:/zhangchaoran/miccai_achieve/data/test", type=str,
-                    help="dataset directory")
-parser.add_argument("--test_data_dir", default="D:/zhangchaoran/miccai_achieve/data/train/", type=str,
-                    help="dataset directory")
-parser.add_argument("--json_list", default="dataset_0.json", type=str, help="dataset json file")
 
 # 训练参数
 parser.add_argument(
@@ -82,7 +44,6 @@ parser.add_argument("--save_to_test", action="store_true", help="save to test di
 parser.add_argument("--test_mode", action="store_true", help="test mode")
 
 parser.add_argument("--amt", default=-1, type=int, help="data amount")
-parser.add_argument("--save_checkpoint", action="store_true", help="save checkpoint during training")
 parser.add_argument("--max_epochs", default=6000, type=int, help="max number of training epochs")
 parser.add_argument("--batch_size", default=6, type=int, help="number of batch size")
 parser.add_argument("--sw_batch_size", default=1, type=int, help="number of sliding window batch size")

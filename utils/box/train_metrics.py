@@ -1,14 +1,8 @@
 import numpy as np
-import os
-import torch.nn as nn
-import torch
-from PIL import ImageOps, Image
-from sklearn.metrics import confusion_matrix
 
-from utils.evaluation_metrics3D import metrics_3d, Dice
+from utils.box.evaluation_metrics3D import metrics_3d
 
 from sklearn import metrics
-from skimage import filters
 
 
 def AUC_score(SR, GT, threshold=0.5):
