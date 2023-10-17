@@ -5,6 +5,7 @@
   "train": true,
   "test": false,
   "new_run_name": null,
+  "model_name": "unetr",
   "log_dir": "./runs",
   "tag_id": null,
   "log_frq": 250,

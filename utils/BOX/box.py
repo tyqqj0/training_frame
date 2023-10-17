@@ -1,7 +1,7 @@
 # -*- CODING: UTF-8 -*-
 # @time 2023/9/26 23:06
 # @Author tyqqj
-# @File box.py
+# @File BOX.py
 # @
 # @Aim
 
@@ -13,8 +13,8 @@ import argparse
 
 from mlflow import MlflowClient
 
-import utils.box.vis
-import utils.box.evl
+import utils.BOX.vis
+import utils.BOX.evl
 
 import torch
 import mlflow
@@ -48,16 +48,21 @@ from monai.inferers import sliding_window_inference
 '''
 
 
-def parser_cfg_loader(parser, mode, path=""):
+def parser_cfg_loader(mode='train', path=""):
     if path != "":
-        cfg = json.load(open(path, 'r'))
+        mode = path
     else:
-        if mode == "train":
-            cfg = json.load(open(os.path.join('./cfg', 'train.json'), 'r'))
-        elif mode == "test":
-            cfg = json.load(open(os.path.join('./cfg', 'test.json'), 'r'))
-        else:
-            raise ValueError("invalid mode")
+        mode = os.path.join("./cfg", mode + ".json")
+    cfg = {}  # 默认的空配置
+    try:
+        with open(mode, "r") as f:
+            cfg = json.load(f)
+    except FileNotFoundError:
+        print(f"Warning: Configuration file {mode} not found. Using default configuration.")
+    except json.JSONDecodeError:
+        print(f"Warning: Could not decode configuration file {mode}. Check if it is a valid JSON file.")
+    ##################################################################################################
+    parser = argparse.ArgumentParser(description="BOX configuration")
     parser.add_argument("-c", "--is_continue", action="store_true", default=cfg["is_continue"],
                         help="continue training")
     parser.add_argument("-n", "--exp_name", type=str, default=cfg["exp_name"],
@@ -65,6 +70,7 @@ def parser_cfg_loader(parser, mode, path=""):
     parser.add_argument("-i", "--run_id", type=str, default=cfg["run_id"],
                         help="run id, ***must be set when test or is_continue, only for continue training***")
     parser.add_argument('-nrn', "--new_run_name", type=str, default=cfg["new_run_name"], help="new run name")
+    parser.add_argument("--model_name", type=str, default=cfg["model_name"], help="model name")
     parser.add_argument("--log_dir", type=str, default=cfg["log_dir"], help="log dir")
     parser.add_argument("--tag_id", type=str, default=cfg["tag_id"], help="tag id, ***commanded to set***")
     parser.add_argument("--log_frq", type=int, default=cfg["log_frq"], help="log frequency")
@@ -77,8 +83,8 @@ def parser_cfg_loader(parser, mode, path=""):
     parser.add_argument("--vis_3d_frq", type=int, default=cfg["vis_3d_frq"], help="visualize 3d images frequency")
     parser.add_argument("--vis_2d_tb", action="store_true", default=cfg["vis_2d_tb"],
                         help="visualize 2d tensorboard images")
-
-    return parser
+    args, _ = parser.parse_known_args()
+    return args
 
 
 # def save_checkpoint(net, optimizer, epoch, loss, metric):
@@ -96,13 +102,15 @@ def parser_cfg_loader(parser, mode, path=""):
 
 
 class box:
-    def __init__(self, args):
-
+    def __init__(self, mode='train', path=''):
+        args = parser_cfg_loader(mode=mode, path=path)
         # stop_all_runs()
 
+        self.mode = mode
         self.best_acc = -1
-        self.default_modelname = None
+        self.default_model_name = None
         self.run_id = None
+        # self.loader = None
         self.loader_len = None
         self.epoch = None
         self.use_vis = None
@@ -121,22 +129,17 @@ class box:
         self.vis_2d_cache_loc = './run_cache/vis_2d'
         self.vis_2d_tb_cache_loc = './run_cache/vis_2d_tb'
         self.vis_3d_cache_loc = './run_cache/vis_3d'
-        self.vis_2d_cover = args.vis_2d_cover
-        self.vis_3d_cover = args.vis_3d_cover
         self.model_inferer = None
         self.signatures = None
         # self.epoch_start_time = {}
         self.timer = None
 
         print_line('up')
-        print("Initializing box")
+        print("Initializing BOX")
 
         # 实验模式检查
-        if args.train and args.test:
-            raise ValueError("Cannot set both train and test to True")
-
-        if args.is_continue and not args.train:
-            raise ValueError("Cannot set is_continue to True when train is False")
+        if args.mode is None:
+            raise RuntimeError()
 
         print('set mlflow')
         # mlflow 实验设定
@@ -182,7 +185,7 @@ class box:
                     # raise ValueError("Cannot set is_continue to True when name is None")
                     raise ValueError("Cannot find last run id")
                 args.run_id = last_run_id
-                self.args.run_id = last_run_id
+                # self.args.run_id = last_run_id
                 # 默认使用最后一个运行的id
                 self.run_id = last_run_id
             else:
@@ -194,9 +197,9 @@ class box:
                 print("using run id: {}, name: {}".format(args.run_id, run.data.tags["mlflow.runName"]))
                 # 默认使用最后一个运行的id
                 self.run_id = args.run_id
-                self.args.run_id = args.run_id
+                # self.args.run_id = args.run_id
 
-        if args.test and args.run_id is None:
+        if args.mode and args.run_id is None:
             # 询问是否使用最后一个运行的id
             swc = input("run_id is None, use last run id? (y/n)")
             if swc == "y":
@@ -216,18 +219,18 @@ class box:
 
         # 置入内部参数
         self.artifact_location = experiment.artifact_location
-        print('Initializing box complete')
+        print('Initializing BOX complete')
         print_line('down')
 
-    def set_model_inferer(self, model):
+    def set_model_inferer(self, model, inf_size=[96, 96, 96]):
         print("set model inferer")
-        inf_size = [self.args.roi_x, self.args.roi_y, self.args.roi_z]
+
         self.model_inferer = partial(
             sliding_window_inference,
             roi_size=inf_size,
-            sw_batch_size=self.args.sw_batch_size,
+            sw_batch_size=1,
             predictor=model,
-            overlap=self.args.infer_overlap,
+            overlap=self.args.infer_overlap,  # overlap是重叠的部分
         )
 
     # 内部函数 标准化标签
@@ -245,14 +248,14 @@ class box:
         if stage is 'train':
             self.timer = epoch_timer()
             self.timer.start(epoch)
-        print("box start epoch: ", epoch)
+        print("BOX start epoch: ", epoch)
         self.epoch = epoch
         self.epoch_stage = stage
         self.use_vis = use_vis
         if use_vis is None:
             if self.args.test or (stage is 'val'):
                 self.use_vis = True
-        self.evler = utils.box.evl.evl(loader, epoch)
+        self.evler = utils.BOX.evl.evl(loader, epoch)
         # 计算loader长度
         lenghtt = 0
         for i, _ in enumerate(loader):
@@ -286,7 +289,7 @@ class box:
     # self.log(stage, epoch, input, output, target, loss, metric, use_vis)
 
     def update_in_epoch(self, step, out, target, batch_size=-1, stage="train"):
-        # print("box updating")
+        # print("BOX updating")
         # 如果out是概率，我们需要转换成预测, 判断最小值是否为0
         if out.min() < 0:
             out = out < 0
@@ -324,13 +327,20 @@ class box:
         # 计算参数列表,获取参数
 
         print_line('up')
-        print("box end epoch, epoch: ", self.epoch + 1, " stage: ", self.epoch_stage)
+        print("BOX end epoch, epoch: ", self.epoch + 1, " stage: ", self.epoch_stage)
         metrics_dict = self.evler.end_epoch()
         print_line('down')
         for metric, value in metrics_dict.items():
             mlflow.log_metric(self.epoch_stage + '_' + metric, value, step=self.epoch + 1)
 
-        # self.visualizes(loader, model)
+    # TODO: box只有基础参数托管，通用性不强，需要改进
+    # def calculate_metrics(self, model, loader, epoch):
+    #     # 计算附加的指标指标
+    #     print_line('up')
+    #     print("BOX calculate metrics, epoch: ", epoch + 1)
+    #     print_line('down')
+
+    # self.visualizes(loader, model)
 
     def visualizes(self, model, loader):
         first_batch = None
@@ -370,7 +380,7 @@ class box:
                     #     self.signatures = infer_signature(data, logits)
                 # 可视化
                 if self.vis_2d:
-                    utils.box.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
+                    utils.BOX.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
                                          add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
                     if not os.path.exists(self.vis_2d_cache_loc):
@@ -383,7 +393,7 @@ class box:
                     print('vis_2d complete')
 
                 if self.vis_2d_tb:
-                    utils.box.vis.vis_2d_tensorboard(self.vis_2d_tb_cache_loc, self.epoch, image=data, outputs=logits,
+                    utils.BOX.vis.vis_2d_tensorboard(self.vis_2d_tb_cache_loc, self.epoch, image=data, outputs=logits,
                                                      label=target,
                                                      add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
@@ -397,7 +407,7 @@ class box:
                     print('vis_2d_tensorboard complete')
 
                 if self.vis_3d:
-                    utils.box.vis.vis_mha(self.vis_3d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
+                    utils.BOX.vis.vis_mha(self.vis_3d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
                                           add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
                     if not os.path.exists(self.vis_3d_cache_loc):
@@ -417,9 +427,9 @@ class box:
     def save_model(self, model, epoch, filename=None):
         speed = self.timer.end()
         mlflow.log_metric("epoch/h", speed, step=self.epoch)
-        print("box saving model")
+        print("BOX saving model")
         if filename is None:
-            filename = self.default_modelname
+            filename = self.default_model_name
 
         # 保存模型
         # 检查是否应保存模型
@@ -438,7 +448,7 @@ class box:
 
         # 检查是否应更新 best_acc 并保存最佳模型
         if accuracy > self.best_acc:
-            print("box saving best model")
+            print("BOX saving best model")
             self.best_acc = accuracy
             # # 删除旧的最佳模型
             # best_model_path = f"{self.artifact_location}/{filename}_best"
@@ -530,8 +540,8 @@ class box:
         artifact_uri = mlflow.get_artifact_uri()
         print(f"Artifact URI: {artifact_uri}")
         # 将self.default_modelname设置为run_name
-        if self.default_modelname is None:
-            self.default_modelname = self.run.info.run_name
+        if self.default_model_name is None:
+            self.default_model_name = self.run.info.run_name
         return self.run
 
     def __exit__(self, exc_type, exc_val, exc_tb):

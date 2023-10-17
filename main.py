@@ -10,7 +10,7 @@ import os
 
 from mlflow.entities import Experiment
 # from functools import partial
-import utils.box as box
+import utils.BOX as box
 
 from monai.losses import DiceCELoss, DiceLoss
 from monai.metrics import DiceMetric
@@ -105,6 +105,6 @@ def main_worker(args):
 if __name__ == "__main__":
     # 解析参数
     args = parser.parse_args()
-    run_box = box.box(args)
+    run_box = BOX.box(args)
     # mlflow 实验运行
     main_worker(args)

@@ -1,6 +1,6 @@
 import numpy as np
 
-from utils.box.evaluation_metrics3D import metrics_3d
+from utils.BOX.evaluation_metrics3D import metrics_3d
 
 from sklearn import metrics
 

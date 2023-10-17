@@ -18,6 +18,8 @@ import torch.nn.parallel
 import torch.utils.data.distributed
 from torch.cuda.amp import GradScaler, autocast
 from utils.utils import distributed_all_gather
+from skimage.measure import label, regionprops
+import mlflow
 
 from monai.data import decollate_batch
 
@@ -83,7 +85,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=No
         box.update_in_epoch(step=idx, out=logits, target=target, stage='train')
         # print(logits.shape, target.shape)
         # if not args.test:
-        #     box.vis(epoch, args, data, logits, target)
+        #     BOX.vis(epoch, args, data, logits, target)
         # see_loss.update(logits < 0, target)
         if args.rank == 0:
             print(
@@ -135,7 +137,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
 
             # if args.test:
             # 可视化
-            # box.vis(epoch, args, data, logits, target, add_text='val')
+            # BOX.vis(epoch, args, data, logits, target, add_text='val')
             box.update_in_epoch(step=idx, out=logits, target=target, stage='val')
 
             acc = acc_func(y_pred=val_output_convert, y=val_labels_convert)
@@ -177,6 +179,32 @@ def save_checkpoint(model, epoch, args, filename="model.pt", best_acc=0, optimiz
     print("Saving checkpoint", filename)
 
 
+def additional_matrics(model_inferer, loader, epoch):
+    # 预测方法可以取
+    # 找到第一个batch
+    first_batch = []
+    for first_batch in loader:
+        break
+    if isinstance(first_batch, list):
+        data, target = first_batch
+    else:
+        data, target = first_batch["image"], first_batch["label"]
+    data, target = data.cuda(0), target.cuda(0)
+    with torch.no_grad():
+        logits = model_inferer(data)
+
+    # 如果输出是二维，取1, [batch_size, 2, 96, 96, 96]
+    if logits.shape()[1] == 2:
+        logits = logits[:, 1]
+    if len(logits.shape()) > 3:
+        logits = logits.squeeze(0)
+        logits = logits.squeeze(0)
+    # 不论logits是不是概率
+    logits = logits > 0
+    max_volume = calculate_max_component(logits.cpu().numpy())
+    mlflow.log_metric("max_volume", max_volume, step=epoch)
+
+
 def run_training(
         model,
         train_loader,
@@ -192,30 +220,18 @@ def run_training(
         post_pred=None,
         box=None,
 ):
-    # writer = None
-    # cam = GradCAM(nn_module=model, target_layers='out')
-    # if args.logdir is not None and args.rank == 0:
-    #     box.writer = SummaryWriter(log_dir=args.logdir)
-    #     if args.rank == 0:
-    #         print("Writing Tensorboard logs to ", args.logdir)
-    # scaler = None
     if args.amp:
         scaler = GradScaler()
     val_acc_max = 0.0
     print(args.test)
-    if args.test:
-        max_epochs = 99999
-    else:
-        max_epochs = args.max_epochs
-    print("max_epoch", max_epochs)
 
-    for epoch in range(start_epoch, max_epochs):
+    for epoch in range(start_epoch, args.max_epochs):
         if args.distributed:
             train_loader.sampler.set_epoch(epoch)
             torch.distributed.barrier()
-        print(args.rank, time.ctime(), "Epoch:", epoch)
+        print(args.rank, time.ctime(), "Epoch:", epoch + 1, "/", args.max_epochs)
         epoch_time = time.time()
-        # box
+        # BOX
 
         train_loss = train_epoch(
             model, train_loader, optimizer, scaler=scaler, epoch=epoch, loss_func=loss_func, args=args, box=box
@@ -226,15 +242,7 @@ def run_training(
                 "loss: {:.4f}".format(train_loss),
                 "time {:.2f}s".format(time.time() - epoch_time),
             )
-        # if args.rank == 0 and box.writer is not None:
-        #     box.writer.add_scalar("train_loss", train_loss, epoch)
-        b_new_best = False
-
-        # if (epoch + 1) % args.vis_every == 0:
-        #     vis.vis(model, val_loader, args, epoch)
-        #     vis.vis_cam(cam, val_loader, args)
-
-        if (epoch + 1) % args.val_every == 0:
+        if (epoch + 1) % args.val_frq == 0:
             if args.distributed:
                 torch.distributed.barrier()
 
@@ -258,26 +266,9 @@ def run_training(
                     val_avg_acc,
                     "time {:.2f}s".format(time.time() - epoch_time),
                 )
-                # if box.writer is not None:
-                #     box.writer.add_scalar("val_acc", val_avg_acc, epoch)
-
-            #     if val_avg_acc > val_acc_max:
-            #         print("new best ({:.6f} --> {:.6f}). ".format(val_acc_max, val_avg_acc))
-            #         val_acc_max = val_avg_acc
-            #         b_new_best = True
-            #         if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
-            #             # save_checkpoint(
-            #             #     model, epoch, args, best_acc=val_acc_max, optimizer=optimizer, scheduler=scheduler
-            #             # )
-            #             box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer)
-            #
-            # if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
-            #     # save_checkpoint(model, epoch, args, best_acc=val_acc_max, filename="model_final.pt")
-            #     box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer,
-            #                    filename="model_final.pt")
-            # if b_new_best:
-            #     print("Copying to model.pt new best model!!!!")
-            #     shutil.copyfile(os.path.join(args.logdir, "model_final.pt"), os.path.join(args.logdir, "model.pt"))
+            if val_avg_acc > val_acc_max:
+                val_acc_max = val_avg_acc
+        additional_matrics(model_inferer, val_loader, epoch)  # TODO: 这个写的不好看
         box.visualizes(model, val_loader)
         box.save_model(model, epoch)
         if scheduler is not None:
@@ -286,3 +277,20 @@ def run_training(
     print("Training Finished !, Best Accuracy: ", val_acc_max)
 
     return val_acc_max
+
+
+def calculate_max_component(image_3d, connectivity=3):
+    # connectivity: 是指连通组件的连接方式，可以是1,2,3,4,6
+    # 使用 `label` 函数来找到并标记所有的连通组件
+    labels_3d = label(image_3d, connectivity=connectivity)
+
+    # 使用 `regionprops` 来获取每个连通组件的属性
+    props_3d = regionprops(labels_3d)
+
+    # 找到最大的连通组件
+    max_volume = 0
+    for prop in props_3d:
+        if prop.area > max_volume:
+            max_volume = prop.area
+
+    return max_volume
