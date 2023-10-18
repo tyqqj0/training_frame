@@ -4,6 +4,7 @@
   "is_continue": false,
   "train": true,
   "test": false,
+  "is_continue": false,
   "new_run_name": null,
   "model_name": "unetr",
   "log_dir": "./runs",

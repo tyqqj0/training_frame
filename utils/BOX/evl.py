@@ -51,7 +51,7 @@ class evl:
     def update(self, out, target, batch_size=-1):
         if batch_size == -1:
             batch_size = out.shape[0]
-        acc, sen, spe, iou, dsc, pre = utils.box.train_metrics.metrics3d(out, target, batch_size)
+        acc, sen, spe, iou, dsc, pre = utils.BOX.train_metrics.metrics3d(out, target, batch_size)
         self.ACC.append(acc)
         self.SEN.append(sen)
         self.SPE.append(spe)

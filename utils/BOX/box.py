@@ -61,6 +61,7 @@ def parser_cfg_loader(mode='train', path=""):
         print(f"Warning: Configuration file {mode} not found. Using default configuration.")
     except json.JSONDecodeError:
         print(f"Warning: Could not decode configuration file {mode}. Check if it is a valid JSON file.")
+    print(cfg)
     ##################################################################################################
     parser = argparse.ArgumentParser(description="BOX configuration")
     parser.add_argument("-c", "--is_continue", action="store_true", default=cfg["is_continue"],
