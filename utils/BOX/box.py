@@ -73,7 +73,8 @@ def parser_cfg_loader(mode='train', path=""):
     parser.add_argument("--model_name", type=str, default=cfg["model_name"], help="model name")
     parser.add_argument("--log_dir", type=str, default=cfg["log_dir"], help="log dir")
     parser.add_argument("--tag_id", type=str, default=cfg["tag_id"], help="tag id, ***commanded to set***")
-    parser.add_argument("--log_frq", type=int, default=cfg["log_frq"], help="log frequency")
+    parser.add_argument("--log_frq", type=int, default=cfg["log_frq"],
+                        help="log frequency")  # TODO: 这个写的不好，参数逻辑不通现在，参数定义需要调整
     parser.add_argument("--val_frq", type=int, default=cfg["val_frq"], help="val frequency")
     parser.add_argument("--save_frq", type=int, default=cfg["save_frq"],
                         help="save frequency, disabled in test and val")
@@ -508,6 +509,9 @@ class box:
             model = loaded_model
 
         return model, int(epoch), accuracy
+
+    def get_frq(self):
+        return self.args.val_frq
 
     def __enter__(self):
         # global args

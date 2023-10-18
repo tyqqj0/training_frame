@@ -41,8 +41,9 @@ def main():
     '''
     # 获取模型的参数
     args = networks.UNETR.get_args()
+    logrbox = box.box()
     # 将框架参数同步到模型
-    args.val_frq = args.val_frq
+    args.val_frq = logrbox.get_frq()
     args.amp = not args.noamp
 
     if args.distributed:
@@ -51,11 +52,10 @@ def main():
         args.world_size = args.ngpus_per_node * args.world_size
         mp.spawn(main_worker, nprocs=args.ngpus_per_node, args=(args,))
     else:
-        main_worker(args=args)
+        main_worker(args=args, logrbox=logrbox)
 
 
-def main_worker(args):
-    logrbox = box.box()
+def main_worker(args, logrbox):
     # 设置cuda
     set_cuda(args)
 
