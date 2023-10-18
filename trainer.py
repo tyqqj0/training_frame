@@ -242,7 +242,7 @@ def run_training(
                 "loss: {:.4f}".format(train_loss),
                 "time {:.2f}s".format(time.time() - epoch_time),
             )
-        if (epoch + 1) % args.val_frq == 0:
+        if (epoch + 1) % args.val_every == 0:
             if args.distributed:
                 torch.distributed.barrier()
 

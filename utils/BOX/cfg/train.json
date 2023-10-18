@@ -1,4 +1,5 @@
 {
+  "mode": "train",
   "exp_name": "train",
   "run_id": null,
   "is_continue": false,
@@ -14,6 +15,6 @@
   "user_name": "tyqqj",
   "vis_2d": true,
   "vis_3d": false,
-  "vis_3d_frq" : 500,
-  "vis_2d_tb": false,
+  "vis_3d_frq": 500,
+  "vis_2d_tb": false
 }

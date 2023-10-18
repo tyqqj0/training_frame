@@ -27,7 +27,7 @@ def get_args():
     parser.add_argument("--reg_weight", default=1e-5, type=float, help="regularization weight")
     parser.add_argument("--momentum", default=0.99, type=float, help="momentum")
     parser.add_argument("--noamp", action="store_true", help="do NOT use amp for training")
-    parser.add_argument("--val_frq", default=50, type=int, help="validation frequency")
+    parser.add_argument("--val_every", default=50, type=int, help="validation frequency")
     parser.add_argument("--distributed", action="store_true", help="start distributed training")
     parser.add_argument("--world_size", default=1, type=int, help="number of nodes for distributed training")
     parser.add_argument("--rank", default=0, type=int, help="node rank for distributed training")
@@ -72,5 +72,6 @@ def get_args():
     parser.add_argument("--smooth_dr", default=1e-6, type=float, help="constant added to dice denominator to avoid nan")
     parser.add_argument("--smooth_nr", default=0.0, type=float, help="constant added to dice numerator to avoid zero")
     args, _ = parser.parse_known_args()
+    return args
 
 # get_args()

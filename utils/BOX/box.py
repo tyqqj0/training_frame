@@ -52,7 +52,7 @@ def parser_cfg_loader(mode='train', path=""):
     if path != "":
         mode = path
     else:
-        mode = os.path.join("./utils/BOX/cfg", mode + ".json")
+        mode = os.path.join(".\\utils\\BOX\\cfg", mode + ".json")
     cfg = {}  # 默认的空配置
     try:
         with open(mode, "r") as f:
@@ -61,8 +61,10 @@ def parser_cfg_loader(mode='train', path=""):
         print(f"Warning: Configuration file {mode} not found. Using default configuration.")
     except json.JSONDecodeError:
         print(f"Warning: Could not decode configuration file {mode}. Check if it is a valid JSON file.")
+    print(cfg)
     ##################################################################################################
     parser = argparse.ArgumentParser(description="BOX configuration")
+    parser.add_argument("-m", "--mode", type = str, default=cfg["mode"], help="running mode")
     parser.add_argument("-c", "--is_continue", action="store_true", default=cfg["is_continue"],
                         help="continue training")
     parser.add_argument("-n", "--exp_name", type=str, default=cfg["exp_name"],
@@ -119,6 +121,7 @@ class box:
         self.epoch_stage = None
         self.evler = None
         self.args = args
+        print(self.args)
         self.run = None
         self.artifact_location = None
         self.vis_3d = args.vis_3d
@@ -139,8 +142,8 @@ class box:
         print("Initializing BOX")
 
         # 实验模式检查
-        if args.mode is None:
-            raise RuntimeError()
+        # if self.mode is None:
+        #     raise RuntimeError()
 
         print('set mlflow')
         # mlflow 实验设定
@@ -200,7 +203,7 @@ class box:
                 self.run_id = args.run_id
                 # self.args.run_id = args.run_id
 
-        if args.mode and args.run_id is None:
+        if args.mode == "test" and args.run_id is None:
             # 询问是否使用最后一个运行的id
             swc = input("run_id is None, use last run id? (y/n)")
             if swc == "y":

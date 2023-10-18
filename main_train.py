@@ -43,7 +43,7 @@ def main():
     args = networks.UNETR.get_args()
     logrbox = box.box()
     # 将框架参数同步到模型
-    args.val_frq = logrbox.get_frq()
+    args.val_every = logrbox.get_frq()
     args.amp = not args.noamp
 
     if args.distributed:
