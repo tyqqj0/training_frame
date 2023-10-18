@@ -282,8 +282,8 @@ def run_training(
 def calculate_max_component(image_3d, connectivity=18):
     # connectivity: 是指连通组件的连接方式，可以是1,2,3,4,6
     # 使用 `label` 函数来找到并标记所有的连通组件
+    start_time = time.time()
     labels_3d = label(image_3d, connectivity=connectivity)
-
     # 使用 `regionprops` 来获取每个连通组件的属性
     props_3d = regionprops(labels_3d)
 
@@ -293,4 +293,6 @@ def calculate_max_component(image_3d, connectivity=18):
         if prop.area > max_volume:
             max_volume = prop.area
 
+    print("max_volume", max_volume)
+    print("calculate_max_component time", time.time() - start_time)
     return max_volume
