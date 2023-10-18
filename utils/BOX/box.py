@@ -52,7 +52,7 @@ def parser_cfg_loader(mode='train', path=""):
     if path != "":
         mode = path
     else:
-        mode = os.path.join("./cfg", mode + ".json")
+        mode = os.path.join("./utils/BOX/cfg", mode + ".json")
     cfg = {}  # 默认的空配置
     try:
         with open(mode, "r") as f:
