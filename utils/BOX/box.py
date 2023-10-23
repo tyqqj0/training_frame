@@ -15,6 +15,7 @@ from mlflow import MlflowClient
 
 import utils.BOX.vis
 import utils.BOX.evl
+import utils.arg.parser
 
 import torch
 import mlflow
@@ -54,39 +55,13 @@ def parser_cfg_loader(mode='train', path=""):
     else:
         mode = os.path.join(".\\utils\\BOX\\cfg", mode + ".json")
     cfg = {}  # 默认的空配置
-    try:
-        with open(mode, "r") as f:
-            cfg = json.load(f)
-    except FileNotFoundError:
-        print(f"Warning: Configuration file {mode} not found. Using default configuration.")
-    except json.JSONDecodeError:
-        print(f"Warning: Could not decode configuration file {mode}. Check if it is a valid JSON file.")
-    print(cfg)
-    ##################################################################################################
-    parser = argparse.ArgumentParser(description="BOX configuration")
-    parser.add_argument("-m", "--mode", type = str, default=cfg["mode"], help="running mode")
-    parser.add_argument("-c", "--is_continue", action="store_true", default=cfg["is_continue"],
-                        help="continue training")
-    parser.add_argument("-n", "--exp_name", type=str, default=cfg["exp_name"],
-                        help="experiment name, ***must be set***")
-    parser.add_argument("-i", "--run_id", type=str, default=cfg["run_id"],
-                        help="run id, ***must be set when test or is_continue, only for continue training***")
-    parser.add_argument('-nrn', "--new_run_name", type=str, default=cfg["new_run_name"], help="new run name")
-    parser.add_argument("--model_name", type=str, default=cfg["model_name"], help="model name")
-    parser.add_argument("--log_dir", type=str, default=cfg["log_dir"], help="log dir")
-    parser.add_argument("--tag_id", type=str, default=cfg["tag_id"], help="tag id, ***commanded to set***")
-    parser.add_argument("--log_frq", type=int, default=cfg["log_frq"],
-                        help="log frequency")  # TODO: 这个写的不好，参数逻辑不通现在，参数定义需要调整
-    parser.add_argument("--val_frq", type=int, default=cfg["val_frq"], help="val frequency")
-    parser.add_argument("--save_frq", type=int, default=cfg["save_frq"],
-                        help="save frequency, disabled in test and val")
-    parser.add_argument("--user_name", type=str, default=cfg["user_name"], help="user name")
-    parser.add_argument("--vis_2d", action="store_true", default=cfg["vis_2d"], help="visualize 2d images")
-    parser.add_argument("--vis_3d", action="store_true", default=cfg["vis_3d"], help="visualize 3d images")
-    parser.add_argument("--vis_3d_frq", type=int, default=cfg["vis_3d_frq"], help="visualize 3d images frequency")
-    parser.add_argument("--vis_2d_tb", action="store_true", default=cfg["vis_2d_tb"],
-                        help="visualize 2d tensorboard images")
-    args, _ = parser.parse_known_args()
+    if os.path.exists(mode):
+        config_reader = utils.arg.parser.ConfigReader(mode)
+        cfg = config_reader.get_config()
+        arg_parser = utils.arg.parser.ArgParser(cfg)
+        args = arg_parser.parse_args()
+    else:
+        raise ValueError("mode {} not exists".format(mode))
     return args
 
 
@@ -108,7 +83,7 @@ class box:
     def __init__(self, mode='train', path=''):
         args = parser_cfg_loader(mode=mode, path=path)
         # stop_all_runs()
-
+        # return
         self.mode = mode
         self.best_acc = -1
         self.default_model_name = None
@@ -121,7 +96,8 @@ class box:
         self.epoch_stage = None
         self.evler = None
         self.args = args
-        print(self.args)
+        # print(self.args)
+        # self.check_args()
         self.run = None
         self.artifact_location = None
         self.vis_3d = args.vis_3d
@@ -226,6 +202,10 @@ class box:
         print('Initializing BOX complete')
         print_line('down')
 
+    def check_args(self):
+        print("BOX load args: \n", json.dumps(vars(self.args), indent=4))
+        return
+
     def set_model_inferer(self, model, inf_size=[96, 96, 96]):
         print("set model inferer")
 
@@ -249,7 +229,7 @@ class box:
 
     def start_epoch(self, loader, stage, epoch, use_vis=None):
         # self.epoch_start_time = time.time()
-        if stage is 'train':
+        if stage == 'train':
             self.timer = epoch_timer()
             self.timer.start(epoch)
         print("BOX start epoch: ", epoch)
@@ -257,7 +237,7 @@ class box:
         self.epoch_stage = stage
         self.use_vis = use_vis
         if use_vis is None:
-            if self.args.test or (stage is 'val'):
+            if self.args.test or (stage == 'val'):
                 self.use_vis = True
         self.evler = utils.BOX.evl.evl(loader, epoch)
         # 计算loader长度
@@ -497,7 +477,7 @@ class box:
         loaded_model = mlflow.pytorch.load_model(model_uri)
         print("model load complete")
 
-        if model_version is 'latest':
+        if model_version == 'latest':
             model_version = get_latest_model_version(model_name)
             # model_version = [model_version, "latest"]
 

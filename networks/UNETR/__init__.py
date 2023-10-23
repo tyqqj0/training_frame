@@ -73,5 +73,4 @@ def get_args():
     parser.add_argument("--smooth_nr", default=0.0, type=float, help="constant added to dice numerator to avoid zero")
     args, _ = parser.parse_known_args()
     return args
-
 # get_args()

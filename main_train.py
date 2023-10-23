@@ -1,5 +1,3 @@
-import argparse
-import os
 from functools import partial
 
 import numpy as np
@@ -10,10 +8,11 @@ import torch.nn.parallel
 import torch.utils.data.distributed
 
 import networks.UNETR
+import utils.arg.parser
 from networks.UNETR.unetr import UNETR
 from optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from trainer import run_training
-from utils.data_utils import get_loader
+from utils.data_loader.data_utils import get_loader
 from utils.BOX import box
 
 from monai.inferers import sliding_window_inference
@@ -23,13 +22,6 @@ from monai.transforms import AsDiscrete
 from monai.utils.enums import MetricReduction
 from monai import __version__
 
-
-# mlflow 基础参数
-# mlflow_parser = parser.add_argument_group('box_mlflow')
-
-# parser = box.parser_cfg_loader(parser, 'train' if parser.parse_args().train else 'test')
-
-# run_parser = parser.add_argument_group('run')
 
 ########################################################################################################
 
@@ -41,8 +33,16 @@ def main():
     '''
     # 获取模型的参数
     args = networks.UNETR.get_args()
+    # utils.arg.parser.save_parser_to_json(parser, "./UNTER.json")
+    # utils.arg.parser.save_parser_to_json(box.parser_cfg_loader()[1], "./box.json")
+    # return
     logrbox = box.box()
+    logrbox.check_args()
+    # print(logrbox.args)
+    # _, parser = box.parser_cfg_loader()
+    # utils.arg.parser.save_parser_to_json(parser, './utils/BOX/cfg/train1.json')
     # 将框架参数同步到模型
+    # return
     args.val_every = logrbox.get_frq()
     args.amp = not args.noamp
 
@@ -61,7 +61,7 @@ def main_worker(args, logrbox):
 
     # 获取数据读取器
     # TODO: 重写数据读取器
-    loader = get_loader(args)  # 此处的loader是一个列表，列表中的每个元素是一个DataLoader对象，每个DataLoader对象中包含了训练集和验证集的数据
+    loader = get_loader()  # 可以指定数据配置
 
     # 获取模型并读取
     model, start_epoch = get_model(args, logrbox)
