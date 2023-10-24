@@ -130,9 +130,8 @@ def get_loader(data_cfg=None, loader_cfg=None):
     config_reader = psr.ConfigReader(loader_cfg)
     config = config_reader.get_config()
     arg_parser = psr.ArgParser(config)
-    print(arg_parser)
     args = arg_parser.parse_args()
-
+    print(arg_parser)
     # 获取数据集配置文件
     # 如果不存在
     if data_cfg is None:

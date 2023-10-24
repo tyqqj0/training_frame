@@ -161,10 +161,9 @@ def get_args(config_file, cfname='None', check=True):
     config = config_reader.get_config()
     arg_parser = ArgParser(config, cfname)
 
+    args = arg_parser.parse_args()
     if check:
         print(arg_parser)
-
-    args = arg_parser.parse_args()
     return args
 
 # Uncomment to use:
