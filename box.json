@@ -1,0 +1,88 @@
+{
+    "DEFAULT": {
+        "mode": {
+            "help": "running mode",
+            "default": "train",
+            "type": "str"
+        },
+        "is_continue": {
+            "help": "continue training",
+            "default": false,
+            "type": null,
+            "action": "_StoreTrueAction"
+        },
+        "exp_name": {
+            "help": "experiment name, ***must be set***",
+            "default": "train",
+            "type": "str"
+        },
+        "run_id": {
+            "help": "run id, ***must be set when test or is_continue, only for continue training***",
+            "default": null,
+            "type": "str"
+        },
+        "new_run_name": {
+            "help": "new run name",
+            "default": null,
+            "type": "str"
+        },
+        "model_name": {
+            "help": "model name",
+            "default": "unetr",
+            "type": "str"
+        },
+        "log_dir": {
+            "help": "log dir",
+            "default": "./runs",
+            "type": "str"
+        },
+        "tag_id": {
+            "help": "tag id, ***commanded to set***",
+            "default": null,
+            "type": "str"
+        },
+        "log_frq": {
+            "help": "log frequency",
+            "default": 250,
+            "type": "int"
+        },
+        "val_frq": {
+            "help": "val frequency",
+            "default": 5,
+            "type": "int"
+        },
+        "save_frq": {
+            "help": "save frequency, disabled in test and val",
+            "default": 500,
+            "type": "int"
+        },
+        "user_name": {
+            "help": "user name",
+            "default": "tyqqj",
+            "type": "str"
+        },
+        "vis_2d": {
+            "help": "visualize 2d images",
+            "default": true,
+            "type": null,
+            "action": "_StoreTrueAction"
+        },
+        "vis_3d": {
+            "help": "visualize 3d images",
+            "default": false,
+            "type": null,
+            "action": "_StoreTrueAction"
+        },
+        "vis_3d_frq": {
+            "help": "visualize 3d images frequency",
+            "default": 500,
+            "type": "int"
+        },
+        "vis_2d_tb": {
+            "help": "visualize 2d tensorboard images",
+            "default": false,
+            "type": null,
+            "action": "_StoreTrueAction"
+        }
+    }
+}
