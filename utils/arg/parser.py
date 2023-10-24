@@ -155,10 +155,14 @@ def save_parser_to_json(parser, json_file='./UNETR.json', dfname='None'):
         f.write(parser_dict)
 
 
-def get_args(config_file, cfname='None'):
+def get_args(config_file, cfname='None', check=True):
     config_reader = ConfigReader(config_file, cfname)
     config = config_reader.get_config()
     arg_parser = ArgParser(config, cfname)
+
+    if check:
+        print(arg_parser)
+
     args = arg_parser.parse_args()
     return args
 

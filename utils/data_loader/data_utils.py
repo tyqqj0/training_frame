@@ -130,14 +130,16 @@ def get_loader(data_cfg=None, loader_cfg=None):
     config_reader = psr.ConfigReader(loader_cfg)
     config = config_reader.get_config()
     arg_parser = psr.ArgParser(config)
+    print(arg_parser)
     args = arg_parser.parse_args()
 
     # 获取数据集配置文件
     # 如果不存在
-    try:
-        data_cfg = args.data_cfg
-    except:
-        raise ValueError("can not find data_cfg")
+    if data_cfg is None:
+        try:
+            data_cfg = args.data_cfg # 读取loader默认数据集
+        except:
+            raise ValueError("can not find data_cfg")
     # 如果是路径
     if data_cfg.endswith('.json'):
         inside_get_loader(args, data_cfg)
