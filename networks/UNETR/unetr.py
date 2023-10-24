@@ -53,7 +53,7 @@ class UNETR(nn.Module):
             norm_name: feature normalization type and arguments.
             conv_block: bool argument to determine if convolutional block is used.
             res_block: bool argument to determine if residual block is used.
-            dropout_rate: faction of the input units to drop.
+            dropout_rate: faction of the input units to drop. 这个是指的attention的dropout
 
         Examples::
 
