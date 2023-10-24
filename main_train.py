@@ -11,7 +11,8 @@ import networks.UNETR
 import utils.arg
 import utils.arg as arg
 from networks.UNETR.unetr import UNETR
-from networks.unet.unet import UNet
+# from networks.unet.unet import unet
+from monai.networks.nets import UNet
 from optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from trainer import run_training
 from utils.data_loader.data_utils import get_loader
@@ -170,12 +171,13 @@ def get_model(model_name, logrbox, distributed=False, gpu=0):
             dropout_rate=args.dropout_rate,
         )
     elif model_name == "unet":
-        model = UNet()
+        model = UNet(spatial_dims=3, in_channels=1, out_channels=1, channels=(16, 32, 64, 128, 256, 512),
+                     strides=(2, 2, 2, 2, 2), num_res_units=2)
     else:
         raise ValueError("Unsupported model " + str(model_name))
     model, start_epoch, best_acc = logrbox.load_model(model, model_name)
 
-    model.cuda(args.gpu)
+    model.cuda(0)
 
     if distributed:
         torch.cuda.set_device(gpu)
@@ -186,6 +188,10 @@ def get_model(model_name, logrbox, distributed=False, gpu=0):
             model, device_ids=[gpu], output_device=gpu, find_unused_parameters=True
         )
 
+    # 打印模型参数量
+    pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print("model set to", model_name, "start epoch", start_epoch, "best acc", best_acc, "")
+    print("Total parameters count", pytorch_total_params)
     return model, start_epoch
 
 
