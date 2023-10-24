@@ -232,7 +232,7 @@ class box:
         if stage == 'train':
             self.timer = epoch_timer()
             self.timer.start(epoch)
-        print("BOX start epoch: ", epoch)
+        print("BOX start epoch: ", epoch + 1)
         self.epoch = epoch
         self.epoch_stage = stage
         self.use_vis = use_vis
@@ -607,7 +607,7 @@ class epoch_timer:
 
     def start(self, epoch):
         print_line('up')
-        print("epoch {} start".format(epoch))
+        print("epoch {} start".format(epoch + 1))
         self.epoch = epoch
         self.start_time = time.time()
         print_line('down')
@@ -616,7 +616,7 @@ class epoch_timer:
         self.end_time = time.time()
         self.speed = 1 / (self.end_time - self.start_time) * 3600
         print_line('up')
-        print("epoch {} using time: ".format(self.epoch), self.end_time - self.start_time)
+        print("epoch {} using time: ".format(self.epoch + 1), self.end_time - self.start_time)
         print("speed: ", self.end_time - self.start_time, "s/epoch, ", 1 / ((self.end_time - self.start_time) / 3600),
               "epoch/hour")
         print_line('down')
