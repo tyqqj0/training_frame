@@ -9,7 +9,7 @@ import utils.arg
 
 
 def get_args():
-    cfg_file = './UNETR.json'
+    cfg_file = './networks/UNETR/UNETR.json'
     args = utils.arg.get_args(cfg_file)
     return args
 # get_args()

@@ -61,7 +61,7 @@ def main_worker(args, logrbox):
 
     # 获取数据读取器
     # TODO: 重写数据读取器
-    loader = get_loader()  # 可以指定数据配置
+    loader = get_loader('./data/vessel.json')  # 可以指定数据配置
 
     # 获取模型并读取
     model, start_epoch = get_model(args, logrbox)
@@ -88,7 +88,7 @@ def main_worker(args, logrbox):
         roi_size=inf_size,
         sw_batch_size=args.sw_batch_size,
         predictor=model,
-        overlap=args.infer_overlap,
+        overlap=0.5,
     )
 
     pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)

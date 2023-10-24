@@ -220,7 +220,7 @@ class box:
     # 内部函数 标准化标签
     def _normalize_tag(self, tag=None):
         mlflow.set_tag("mlflow.user", self.args.user_name)
-        mlflow.set_tag("mlflow.note.content", "test" if self.args.test else "train")
+        mlflow.set_tag("mlflow.note.content", self.args.mode)
         mlflow.set_tag("mlflow.note.run_id", self.args.run_id if self.args.run_id is not None else self.run.info.run_id)
         # mlflow 参数
         mlflow.log_param("monai_version", __version__)

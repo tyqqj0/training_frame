@@ -41,12 +41,12 @@ def get_dsets(train_dir="", val_dir="", path_ait_train="", path_ait_val=""):
 
 
 if __name__ == "__main__":
-    train_dir = "D:\\Data\\brains\\train"
-    val_dir = "D:\\Data\\brains\\train"
-    all_lists = get_dsets(train_dir, val_dir, "", "1")
+    train_dir = "D:\\zhangchaoran\\miccai_achieve\\data\\train"
+    val_dir = "D:\\zhangchaoran\\miccai_achieve\\data\\test"
+    all_lists = get_dsets(train_dir, val_dir, "", "")
 
     # print(all_lists)
-    with open("../data/datalist.json", "w") as dlj:
+    with open("../data/vessel.json", "w") as dlj:
         json.dump(all_lists, dlj, indent=4)
 
 # get_a_set()

@@ -3,7 +3,7 @@
   "DEFAULT": {
     "data_cfg": {
       "help": "data json file include train and val",
-      "default": "./data/datalist.json",
+      "default": "./data/vessel.json",
       "type": "str"
     },
     "test_mode": {

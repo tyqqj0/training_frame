@@ -1,5 +1,166 @@
 {
-  "name": "公开数据集",
-  "type": "mha",
-  "data_dir": "D:/Data/brains/train/"
+    "train": [
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal002.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal002.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal003.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal003.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal004.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal004.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal006.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal006.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal008.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal008.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal009.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal009.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal010.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal010.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal011.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal011.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal012.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal012.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal017.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal017.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal018.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal018.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal020.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal020.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal021.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal021.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal022.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal022.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal023.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal023.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal025.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal025.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal026.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal026.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal027.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal027.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal033.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal033.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal034.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal034.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal037.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal037.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal040.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal040.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal042.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal042.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal043.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal043.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal044.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal044.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal045.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal045.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal047.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal047.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal054.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal054.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal056.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal056.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal058.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal057.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal060.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal058.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal063.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal060.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal064.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal063.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal070.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal064.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal071.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal070.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal074.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal071.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal086.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal074.mha"
+        }
+    ],
+    "val": [
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/test/image/Normal074.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/test/label/Normal074.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/test/image/Normal077.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/test/label/Normal077.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/test/image/Normal079.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/test/label/Normal079.mha"
+        }
+    ]
 }

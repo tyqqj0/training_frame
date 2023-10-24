@@ -70,8 +70,11 @@ class ArgParser:
             namecf = 'uname parser'
 
         if namecf == 'uname parser':
-            if config['name'] != 'None':
-                namecf = config['name']
+            try:
+                if config['name'] != 'None':
+                    namecf = config['name']
+            except:
+                raise ValueError('config json has no name')
 
         self.parser = argparse.ArgumentParser(description=namecf)
         for section, parameters in config.items():
@@ -164,6 +167,7 @@ def get_args(config_file, cfname='None', check=True):
     arg_parser = ArgParser(config, cfname)
     args = arg_parser.parse_args()
     if check:
+        print(arg_parser.parser.prog)
         print(arg_parser)
     return args
 
