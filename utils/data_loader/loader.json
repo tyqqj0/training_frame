@@ -6,7 +6,7 @@
       "default": "./data/datalist.json",
       "type": "str"
     },
-    "data_cfg": {
+    "test_mode": {
       "help": "set test mode",
       "default": false,
       "type": null,
@@ -31,6 +31,11 @@
     "rank": {
       "help": "node rank for distributed training",
       "default": 0,
+      "type": "int"
+    },
+    "workers": {
+      "help": "number of workers",
+      "default": 1,
       "type": "int"
     },
     "use_normal_dataset": {
