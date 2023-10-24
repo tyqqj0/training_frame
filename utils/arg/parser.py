@@ -20,6 +20,11 @@ class ConfigReader:
     """Reads a JSON file and returns a dictionary of arguments."""
 
     def __init__(self, config_file, namecf='None'):
+        '''
+        只有创建默认的时候才会用到namecf
+        :param config_file:
+        :param namecf:
+        '''
         self.config_file = config_file
         if namecf == 'None':
             try:
@@ -58,6 +63,9 @@ class ArgParser:
     """Takes a dictionary of arguments and uses it to create an 'argparse.ArgumentParser' instance."""
 
     def __init__(self, config, namecf='uname parser'):
+        if namecf == 'None':
+            namecf = 'uname parser'
+
         if namecf == 'uname parser':
             if config['name'] != 'None':
                 namecf = config['name']
@@ -145,6 +153,14 @@ def save_parser_to_json(parser, json_file='./UNETR.json', dfname='None'):
 
     with open(json_file, 'w') as f:
         f.write(parser_dict)
+
+
+def get_args(config_file, cfname='None'):
+    config_reader = ConfigReader(config_file, cfname)
+    config = config_reader.get_config()
+    arg_parser = ArgParser(config, cfname)
+    args = arg_parser.parse_args()
+    return args
 
 # Uncomment to use:
 # config_reader = ConfigReader('./UNETR.json')

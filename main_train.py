@@ -8,7 +8,7 @@ import torch.nn.parallel
 import torch.utils.data.distributed
 
 import networks.UNETR
-import utils.arg.parser
+import utils.arg as arg
 from networks.UNETR.unetr import UNETR
 from optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from trainer import run_training
