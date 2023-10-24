@@ -63,6 +63,7 @@ class ArgParser:
     """Takes a dictionary of arguments and uses it to create an 'argparse.ArgumentParser' instance."""
 
     def __init__(self, config, namecf='uname parser'):
+        self.args = None
         if namecf == 'None':
             namecf = 'uname parser'
 
