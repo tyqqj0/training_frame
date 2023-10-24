@@ -23,6 +23,11 @@
       "type": null,
       "action": "store_true"
     },
+    "workers": {
+      "help": "number of workers",
+      "default": 1,
+      "type": "int"
+    },
     "rank": {
       "help": "node rank for distributed training",
       "default": 0,
