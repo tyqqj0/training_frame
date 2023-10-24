@@ -89,7 +89,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=No
         # see_loss.update(logits < 0, target)
         if args.rank == 0:
             print(
-                "Epoch {}/{} {}/{}".format(epoch, args.max_epochs, idx, len(loader)),
+                "Epoch {}/{} {}/{}".format(epoch + 1, args.max_epochs, idx, len(loader)),
                 "loss: {:.4f}".format(run_loss.avg),
                 "time {:.2f}s".format(time.time() - start_time),
                 # "data: {}".format(data.shape)
@@ -155,7 +155,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             if args.rank == 0:
                 # see_loss.print_avr()
                 print(
-                    "Val {}/{} {}/{}".format(epoch, args.max_epochs, idx, len(loader)),
+                    "Val {}/{} {}/{}".format(epoch + 1, args.max_epochs, idx, len(loader)),
                     "acc",
                     avg_acc,
                     "time {:.2f}s".format(time.time() - start_time),
@@ -194,9 +194,9 @@ def additional_matrics(model_inferer, loader, epoch):
         logits = model_inferer(data)
 
     # 如果输出是二维，取1, [batch_size, 2, 96, 96, 96]
-    if logits.shape()[1] == 2:
+    if logits.shape[1] == 2:
         logits = logits[:, 1]
-    if len(logits.shape()) > 3:
+    if len(logits.shape) > 3:
         logits = logits.squeeze(0)
         logits = logits.squeeze(0)
     # 不论logits是不是概率
@@ -238,7 +238,7 @@ def run_training(
         )
         if args.rank == 0:
             print(
-                "Final training  {}/{}".format(epoch, args.max_epochs - 1),
+                "Final training  {}/{}".format(epoch + 1, args.max_epochs - 1),
                 "loss: {:.4f}".format(train_loss),
                 "time {:.2f}s".format(time.time() - epoch_time),
             )
@@ -261,7 +261,7 @@ def run_training(
             )
             if args.rank == 0:
                 print(
-                    "Final validation  {}/{}".format(epoch, args.max_epochs - 1),
+                    "Final validation  {}/{}".format(epoch + 1, args.max_epochs - 1),
                     "acc",
                     val_avg_acc,
                     "time {:.2f}s".format(time.time() - epoch_time),
@@ -279,7 +279,7 @@ def run_training(
     return val_acc_max
 
 
-def calculate_max_component(image_3d, connectivity=18):
+def calculate_max_component(image_3d, connectivity=3):
     # connectivity: 是指连通组件的连接方式，可以是1,2,3,4,6
     # 使用 `label` 函数来找到并标记所有的连通组件
     start_time = time.time()

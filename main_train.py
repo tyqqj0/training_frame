@@ -62,12 +62,14 @@ def main_worker(args, logrbox):
     # 设置cuda
     set_cuda(args)
 
+
+
+    # 获取模型并读取
+    model, start_epoch = get_model(args.model_name, logrbox)
+
     # 获取数据读取器
     # TODO: 重写数据读取器
     loader = get_loader('./data/vessel.json')  # 可以指定数据配置
-
-    # 获取模型并读取
-    model, start_epoch = get_model(args, logrbox)
 
     # 设置模型的推理器
     # TODO: 这个不好看写法，改成自动的更好
@@ -154,7 +156,7 @@ def set_optim(model, optim_name="adamw", optim_lr=1e-4, reg_weight=1e-5, momentu
 
 
 def get_model(model_name, logrbox, distributed=False, gpu=0):
-    if (model_name is None) or model_name == "unetr":
+    if model_name == "unetr":
         args = utils.arg.get_args("./networks/UNETR/UNETR.json")
         model = UNETR(
             in_channels=args.in_channels,
@@ -179,14 +181,14 @@ def get_model(model_name, logrbox, distributed=False, gpu=0):
 
     model.cuda(0)
 
-    if distributed:
-        torch.cuda.set_device(gpu)
-        if args.norm_name == "batch":
-            model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-        model.cuda(gpu)
-        model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[gpu], output_device=gpu, find_unused_parameters=True
-        )
+    # if distributed:
+    #     torch.cuda.set_device(gpu)
+    #     if args.norm_name == "batch":
+    #         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    #     model.cuda(gpu)
+    #     model = torch.nn.parallel.DistributedDataParallel(
+    #         model, device_ids=[gpu], output_device=gpu, find_unused_parameters=True
+    #     )
 
     # 打印模型参数量
     pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)

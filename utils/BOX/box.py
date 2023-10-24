@@ -237,7 +237,7 @@ class box:
         self.epoch_stage = stage
         self.use_vis = use_vis
         if use_vis is None:
-            if self.args.test or (stage == 'val'):
+            if self.args.mode == 'test' or (stage == 'val'):
                 self.use_vis = True
         self.evler = utils.BOX.evl.evl(loader, epoch)
         # 计算loader长度
