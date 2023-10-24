@@ -8,8 +8,10 @@ import torch.nn.parallel
 import torch.utils.data.distributed
 
 import networks.UNETR
+import utils.arg
 import utils.arg as arg
 from networks.UNETR.unetr import UNETR
+from networks.unet.unet import UNet
 from optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from trainer import run_training
 from utils.data_loader.data_utils import get_loader
@@ -32,7 +34,7 @@ def main():
     :return:
     '''
     # 获取模型的参数
-    args = networks.UNETR.get_args()
+    args = utils.arg.get_args("./run_set.json")
     # utils.arg.parser.save_parser_to_json(parser, "./UNTER.json")
     # utils.arg.parser.save_parser_to_json(box.parser_cfg_loader()[1], "./box.json")
     # return
@@ -43,7 +45,7 @@ def main():
     # utils.arg.parser.save_parser_to_json(parser, './utils/BOX/cfg/train1.json')
     # 将框架参数同步到模型
     # return
-    args.val_every = logrbox.get_frq()
+    args.val_every = logrbox.get_frq()  # TODO: 这个不好看写法, 参数关系再想想
     args.amp = not args.noamp
 
     if args.distributed:
@@ -150,8 +152,9 @@ def set_optim(model, optim_name="adamw", optim_lr=1e-4, reg_weight=1e-5, momentu
     return optimizer
 
 
-def get_model(args, logrbox):
-    if (args.model_name is None) or args.model_name == "unetr":
+def get_model(model_name, logrbox, distributed=False, gpu=0):
+    if (model_name is None) or model_name == "unetr":
+        args = utils.arg.get_args("./networks/UNETR/UNETR.json")
         model = UNETR(
             in_channels=args.in_channels,
             out_channels=args.out_channels,
@@ -166,19 +169,21 @@ def get_model(args, logrbox):
             res_block=True,
             dropout_rate=args.dropout_rate,
         )
+    elif model_name == "unet":
+        model = UNet()
     else:
-        raise ValueError("Unsupported model " + str(args.model_name))
-    model, start_epoch, best_acc = logrbox.load_model(model)
+        raise ValueError("Unsupported model " + str(model_name))
+    model, start_epoch, best_acc = logrbox.load_model(model, model_name)
 
     model.cuda(args.gpu)
 
-    if args.distributed:
-        torch.cuda.set_device(args.gpu)
+    if distributed:
+        torch.cuda.set_device(gpu)
         if args.norm_name == "batch":
             model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-        model.cuda(args.gpu)
+        model.cuda(gpu)
         model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[args.gpu], output_device=args.gpu, find_unused_parameters=True
+            model, device_ids=[gpu], output_device=gpu, find_unused_parameters=True
         )
 
     return model, start_epoch

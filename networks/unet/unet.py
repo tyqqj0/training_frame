@@ -26,43 +26,8 @@ def initialize_weights(*models):
                 m.bias.data.zero_()
 
 
-# class Encoder(nn.Module):
-#     def __init__(self, in_channels, out_channels):
-#         super(Encoder, self).__init__()
-#         self.conv1 = nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1)
-#         self.bn1 = nn.BatchNorm3d(out_channels)
-#         self.conv2 = nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1)
-#         self.bn2 = nn.BatchNorm3d(out_channels)
-#         self.relu = nn.ReLU(inplace=False)
-#         # self.conv1x1 = nn.Conv3d(in_channels, out_channels, kernel_size=1)
-#
-#     def forward(self, x):
-#         # residual = self.conv1x1(x)
-#         out = self.relu(self.bn1(self.conv1(x)))
-#         out = self.relu(self.bn2(self.conv2(out)))
-#         # out += residual
-#         # out = self.relu(out)
-#         return out
-
-
-# class Decoder(nn.Module):
-#     def __init__(self, in_channels, out_channels):
-#         super(Decoder, self).__init__()
-#         self.conv = nn.Sequential(
-#             nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1),
-#             nn.BatchNorm3d(out_channels),
-#             nn.ReLU(inplace=True),
-#             nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1),
-#             nn.BatchNorm3d(out_channels),
-#             nn.ReLU(inplace=True)
-#         )
-#
-#     def forward(self, x):
-#         out = self.conv(x)
-#         return out
-
 class Reduction_Encoder(nn.Module):
-    def __init__(self, input, c1,  c2, c3,**kwargs):
+    def __init__(self, input, c1, c2, c3, **kwargs):
         super(Reduction_Encoder, self).__init__(**kwargs)
         # 线路为1×1×1、5×5×5（步长为2）的卷积链
         # 5*5*5的卷积padding应该是2
@@ -96,28 +61,12 @@ class Reduction_Encoder(nn.Module):
             nn.ReLU()
 
         )
-        # self.p3 = nn.Sequential(
-        #     nn.Conv3d(input, c3[0], kernel_size=(1, 1, 1), stride=(1, 1, 1)),
-        #     nn.BatchNorm3d(c3[0]),
-        #     nn.ReLU(),
-        #     nn.Conv3d(c3[0], c3[1], kernel_size=(5, 5, 1), padding=(2, 2, 0)),
-        #     nn.BatchNorm3d(c3[1]),
-        #     nn.ReLU(inplace=True),
-        #     nn.Conv3d(c3[1], c3[2], kernel_size=(5, 1, 5), padding=(2, 0, 2)),
-        #     nn.BatchNorm3d(c3[2]),
-        #     nn.ReLU(inplace=True),
-        #     nn.Conv3d(c3[2], c3[3], kernel_size=(1, 5, 5), padding=(0, 2, 2)),
-        #     nn.BatchNorm3d(c3[3]),
-        #     nn.ReLU(inplace=True),
-        # )
 
         self.p3 = nn.Sequential(
             nn.Conv3d(input, c3, kernel_size=(1, 1, 1)),
-            # nn.ReLU()
         )
 
-        self.relu =nn.ReLU()
-
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         p1 = self.p1(x)
@@ -148,6 +97,7 @@ class Decoder(nn.Module):
         out += residual
         out = self.relu(self.bn2(out))
         return out
+
 
 class UNet(nn.Module):
     def __init__(self):

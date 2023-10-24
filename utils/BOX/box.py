@@ -446,7 +446,8 @@ class box:
             mlflow.pytorch.log_model(model, filename + "-best", registered_model_name=filename + "_best",
                                      signature=self.signatures)
 
-    def load_model(self, model, load_run_id=None, model_version='latest', best_model=True, dict=True):
+    def load_model(self, model, set_model_name="unetr", load_run_id=None, dict=True, model_version='latest',
+                   best_model=True):
 
         # 加载模型
         # 检查是否应加载模型
@@ -471,6 +472,9 @@ class box:
         if best_model:
             model_name += "_best"
 
+        # 检查模型名称
+        if model_name != set_model_name:
+            raise ValueError("model_name {} not match set_model_name {}".format(model_name, set_model_name))
         # 从模型注册中心加载模型
         print("loading model")
         model_uri = f"models:/{model_name}/{model_version}"

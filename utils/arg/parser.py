@@ -167,7 +167,7 @@ def get_args(config_file, cfname='None', check=True):
     arg_parser = ArgParser(config, cfname)
     args = arg_parser.parse_args()
     if check:
-        print(arg_parser.parser.prog)
+        print(f"config file {config['name']}:")
         print(arg_parser)
     return args
 
