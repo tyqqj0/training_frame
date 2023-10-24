@@ -160,7 +160,6 @@ def get_args(config_file, cfname='None', check=True):
     config_reader = ConfigReader(config_file, cfname)
     config = config_reader.get_config()
     arg_parser = ArgParser(config, cfname)
-
     args = arg_parser.parse_args()
     if check:
         print(arg_parser)
