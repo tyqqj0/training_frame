@@ -34,7 +34,7 @@ def get_a_set(data_dir="/path/to/my_dataset", path_ait=""):
 
 
 def get_dsets(train_dir="", val_dir="", path_ait_train="", path_ait_val=""):
-    all_lists = {"train": get_a_set(train_dir, path_ait_train), "val": get_a_set(val_dir, path_ait_val)}
+    all_lists = {"training": get_a_set(train_dir, path_ait_train), "validation": get_a_set(val_dir, path_ait_val)}
     # all_lists = json.dumps(all_lists)
     print(json.dumps(all_lists, indent=4))
     return all_lists

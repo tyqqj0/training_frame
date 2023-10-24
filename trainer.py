@@ -223,7 +223,7 @@ def run_training(
     if args.amp:
         scaler = GradScaler()
     val_acc_max = 0.0
-    print(args.test)
+    # print(args.mode)
 
     for epoch in range(start_epoch, args.max_epochs):
         if args.distributed:

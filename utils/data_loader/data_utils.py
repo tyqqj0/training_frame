@@ -141,7 +141,7 @@ def get_loader(data_cfg=None, loader_cfg=None):
             raise ValueError("can not find data_cfg")
     # 如果是路径
     if data_cfg.endswith('.json'):
-        inside_get_loader(args, data_cfg)
+        return inside_get_loader(args, data_cfg)
     else:
         raise ValueError("data_cfg must be a json file")
 
