@@ -7,4 +7,4 @@
 
 
 import parser
-from parser import get_args
+from .parser import get_args

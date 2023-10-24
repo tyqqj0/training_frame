@@ -6,6 +6,12 @@
       "default": "./data/vessel.json",
       "type": "str"
     },
+    "data_cfg": {
+      "help": "set test mode",
+      "default": false,
+      "type": null,
+      "action": "store_true"
+    },
     "batch_size": {
       "help": "number of batch size",
       "default": 6,
@@ -15,7 +21,7 @@
       "help": "start distributed training",
       "default": false,
       "type": null,
-      "action": "_StoreTrueAction"
+      "action": "store_true"
     },
     "rank": {
       "help": "node rank for distributed training",
@@ -26,7 +32,7 @@
       "help": "use monai Dataset class",
       "default": false,
       "type": null,
-      "action": "_StoreTrueAction"
+      "action": "store_true"
     },
     "a_min": {
       "help": "a_min in ScaleIntensityRanged",
