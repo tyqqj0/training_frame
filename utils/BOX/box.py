@@ -82,6 +82,7 @@ def parser_cfg_loader(mode='train', path=""):
 
 class box:
     def __init__(self, mode='train', path=''):
+        self.model_name = None
         self.threshold = None
         self.post_pred = None
         self.post_label = None
@@ -230,6 +231,11 @@ class box:
         mlflow.set_tag("mlflow.note.run_id", self.args.run_id if self.args.run_id is not None else self.run.info.run_id)
         # mlflow 参数
         mlflow.log_param("monai_version", __version__)
+        # 设置网络名称
+        try:
+            mlflow.log_param("model_name", self.model_name)
+        except:
+            pass
         for k, v in vars(self.args).items():
             mlflow.log_param(k, v)
 
@@ -498,7 +504,7 @@ class box:
 
     def load_model(self, model, set_model_name="unetr", load_run_id=None, dict=True, model_version='latest',
                    best_model=True):
-
+        self.model_name = set_model_name
         # 加载模型
         # 检查是否应加载模型
         if not self.args.is_continue:
@@ -557,8 +563,11 @@ class box:
 
         # 模拟参数
         run_name = None
+        model_name = self.model_name
+        if model_name is None:
+            model_name = ''
         if self.args.new_run_name is not None:
-            run_name = self.args.exp_name + '-' + self.args.new_run_name
+            run_name = self.args.exp_name + '-' + model_name + '-' + self.args.new_run_name
         # run_id是用来指定运行的，run_name是用来新建的，都可以没有但是功能不共用
         if self.run_id is not None:
             print("using run id: ", self.run_id)

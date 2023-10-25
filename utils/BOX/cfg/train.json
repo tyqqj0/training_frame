@@ -38,11 +38,6 @@
       "type": "str",
       "help": "new run name"
     },
-    "model_name": {
-      "default": "unet",
-      "type": "str",
-      "help": "model name"
-    },
     "log_dir": {
       "default": "./runs",
       "type": "str",
