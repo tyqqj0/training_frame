@@ -20,6 +20,7 @@ from torch.cuda.amp import GradScaler, autocast
 from utils.utils import distributed_all_gather
 from skimage.measure import label, regionprops
 import mlflow
+import matplotlib.pyplot as plt
 
 from monai.data import decollate_batch
 
