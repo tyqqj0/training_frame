@@ -51,6 +51,9 @@ class evl:
     def update(self, out, target, batch_size=-1):
         if batch_size == -1:
             batch_size = out.shape[0]
+        # 检查输入是否为概率
+        if out.shape[1] != 1:
+            raise ValueError("out shape is not logits")
         acc, sen, spe, iou, dsc, pre = utils.BOX.train_metrics.metrics3d(out, target, batch_size)
         self.ACC.append(acc)
         self.SEN.append(sen)

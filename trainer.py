@@ -124,6 +124,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
                     logits = model(data)
             if not logits.is_cuda:
                 target = target.cpu()
+            box.update_in_epoch(step=idx, out=logits, target=target, stage='val')
             # print(logits.shape, target.shape)
             # see_loss.update(logits < 0, target)
             # print("data.shape", data.shape)
@@ -140,7 +141,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             # if args.test:
             # 可视化
             # BOX.vis(epoch, args, data, logits, target, add_text='val')
-            box.update_in_epoch(step=idx, out=logits, target=target, stage='val')
+
 
             acc = acc_func(y_pred=val_output_convert, y=val_labels_convert)
             acc = acc.cuda(args.rank)
