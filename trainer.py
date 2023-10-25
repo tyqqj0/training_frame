@@ -89,7 +89,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=No
         # see_loss.update(logits < 0, target)
         if args.rank == 0:
             print(
-                "Epoch {}/{} {}/{}".format(epoch + 1, args.max_epochs, idx, len(loader)),
+                "Epoch {}/{} {}/{}".format(epoch + 1, args.max_epochs, idx + 1, len(loader)),
                 "loss: {:.4f}".format(run_loss.avg),
                 "time {:.2f}s".format(time.time() - start_time),
                 # "data: {}".format(data.shape)
@@ -280,6 +280,7 @@ def run_training(
 
 
 def calculate_max_component(image_3d, connectivity=3):
+    print("calculating max component")
     # connectivity: 是指连通组件的连接方式，可以是1,2,3,4,6
     # 使用 `label` 函数来找到并标记所有的连通组件
     start_time = time.time()

@@ -33,7 +33,13 @@ def vis_2d(path, epoch, image, outputs, label=None, add_text='', rank=0):
         if label is not None:
             label = decollate_batch(label)
     n = 64
-    img, out, out_class, lb = image[0][0][n], outputs[0][1][n], outputs[0][1][n] > 0, label[0][0][n]
+    try:
+        img, out, out_class, lb = image[0][0][n], outputs[0][1][n], outputs[0][1][n] > 0, label[0][0][n]
+    except:
+        print("image:", image.shape)
+        print("outputs", outputs.shape)
+        print("label:", label.shape)
+        raise ValueError("check the shape")
     # 缩放范围到0-1
     img = (img - img.min()) / (img.max() - img.min())
     out = (out - out.min()) / (out.max() - out.min())

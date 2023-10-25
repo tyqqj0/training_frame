@@ -232,7 +232,7 @@ class box:
         if stage == 'train':
             self.timer = epoch_timer()
             self.timer.start(epoch)
-        print("BOX start epoch: ", epoch + 1)
+        print(f"BOX start {stage} epoch: ", epoch + 1)
         self.epoch = epoch
         self.epoch_stage = stage
         self.use_vis = use_vis
@@ -346,8 +346,8 @@ class box:
                         data, target = first_batch["image"], first_batch["label"]
                     data, target = data.cuda(self.rank), target.cuda(self.rank)
                     # print(data.shape)
-                    with autocast(enabled=self.args.amp):
-                        if self.model_inferer is not None and data.shape[-1] != 96:  # TODO: 这里是干啥的
+                    with autocast(enabled=True):  # TODO: 这里是干啥的
+                        if self.model_inferer is not None and data.shape[-1] != 96:
                             logits = self.model_inferer(data)
                         else:
                             if data.shape[-1] == 96:
