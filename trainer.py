@@ -142,7 +142,6 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             # 可视化
             # BOX.vis(epoch, args, data, logits, target, add_text='val')
 
-
             acc = acc_func(y_pred=val_output_convert, y=val_labels_convert)
             acc = acc.cuda(args.rank)
             print('here')
@@ -284,6 +283,8 @@ def run_training(
 
 def calculate_max_component(image_3d, connectivity=3):
     print("calculating max component")
+    plt.imshow(image_3d[64])
+    plt.show()
     # connectivity: 是指连通组件的连接方式，可以是1,2,3,4,6
     # 使用 `label` 函数来找到并标记所有的连通组件
     start_time = time.time()
