@@ -375,7 +375,7 @@ class box:
                             mlflow.log_artifact(filepath, artifact_path="vis_2d_tensorboard")
                     print('vis_2d_tensorboard complete')
 
-                if self.vis_3d:
+                if self.vis_3d and self.vis_3d_frq is not None and (self.epoch + 1) % self.vis_3d_frq == 0:
                     utils.BOX.vis.vis_mha(self.vis_3d_cache_loc, self.epoch, image=data, logits=logits, outputs=output,
                                           label=target,
                                           add_text=self.epoch_stage, rank=self.rank)
