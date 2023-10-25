@@ -340,7 +340,7 @@ class box:
                 start_time = time.time()
                 data, logits, output, target = self.predict_one_3d(loader, model)
                 if self.vis_2d:
-                    utils.BOX.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, logits=logits, outputs=logits>0,
+                    utils.BOX.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, logits=logits, outputs=logits<0.5,
                                          label=target,
                                          add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
@@ -439,7 +439,7 @@ class box:
             if logits.shape[0] == 2:
                 logits = logits[1:2, :, :, :]
             if output.shape[0] == 2:
-                output = output[1:2, :, :, :]
+                output = output[0:1, :, :, :]
             if target.shape[0] == 2:
                 target = target[1:2, :, :, :]
             data = data.squeeze(0)
@@ -521,7 +521,7 @@ class box:
             model_name += "_best"
 
         # 检查模型名称
-        if model_name != set_model_name:
+        if set_model_name not in model_name:
             raise ValueError("model_name {} not match set_model_name {}".format(model_name, set_model_name))
         # 从模型注册中心加载模型
         print("loading model")

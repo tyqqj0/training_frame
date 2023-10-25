@@ -203,7 +203,7 @@ def additional_matrics(model_inferer, loader, epoch):
         logits = logits.squeeze(0)
         logits = logits.squeeze(0)
     # 不论logits是不是概率
-    logits = logits > 0
+    logits = logits > 0.5
     max_volume = calculate_max_component(logits.cpu().numpy())
     mlflow.log_metric("max_volume", max_volume, step=epoch)
 
