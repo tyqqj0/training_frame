@@ -340,7 +340,7 @@ class box:
                 start_time = time.time()
                 data, logits, output, target = self.predict_one_3d(loader, model)
                 if self.vis_2d:
-                    utils.BOX.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, logits=logits, outputs=output,
+                    utils.BOX.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, logits=logits, outputs=logits>0,
                                          label=target,
                                          add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
