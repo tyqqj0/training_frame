@@ -48,7 +48,7 @@
       "help": "tag id, ***commanded to set***"
     },
     "log_frq": {
-      "default": 5,
+      "default": 1,
       "type": "int",
       "help": "log frequency"
     },
@@ -58,7 +58,7 @@
       "help": "val frequency"
     },
     "save_frq": {
-      "default": 1,
+      "default": 5,
       "type": "int",
       "help": "save frequency, disabled in test and val"
     },

@@ -66,7 +66,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=No
             param.grad = None
         with autocast(enabled=args.amp):  #
             logits = model(data)
-            print(logits.shape, target.shape)
+            # print(logits.shape, target.shape)
             loss = loss_func(logits, target)  # 这里出现报错了
         if args.amp:
             scaler.scale(loss).backward()
@@ -124,8 +124,10 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
                     logits = model(data)
             if not logits.is_cuda:
                 target = target.cpu()
+            # print(logits.shape, target.shape)
             # see_loss.update(logits < 0, target)
             # print("data.shape", data.shape)
+            # print("logits.shape", logits.shape)
             # print("logits.shape", logits.shape)
             # print('here')
             val_labels_list = decollate_batch(target)
@@ -134,7 +136,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             # print('here')
             val_outputs_list = decollate_batch(logits)
             val_output_convert = [post_pred(val_pred_tensor) for val_pred_tensor in val_outputs_list]  # 将数据onehot 应该是
-
+            # print(val_labels_convert[0].shape, val_output_convert[0].shape)
             # if args.test:
             # 可视化
             # BOX.vis(epoch, args, data, logits, target, add_text='val')

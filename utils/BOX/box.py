@@ -421,26 +421,28 @@ class box:
             if not logits.is_cuda:
                 target = target.cpu()
 
-        data = first_batch.cpu()
-        logits = logits.cpu()
+        data = first_batch.squeeze(0).cpu()
+        logits = logits.squeeze(0).cpu()
         output = self.post_pred(logits)
-        target = self.post_label(target)
+        target = self.post_label(target.squeeze(0))
         if 1:
-            print("data shape:", first_batch.shape)
+            print("data shape:", data.shape)
             print("logits shape:", logits.shape)
             print("output shape:", output.shape)
             print("target shape:", target.shape)
+
         # 处理数据到三维张量
         # (batch, channel, x, y, z) -> (x, y, z)
-        if len(logits.shape) == 5:  # 检查张量的维度是否为5
+        if len(logits.shape) == 4:  # 检查张量的维度是否为5
             print("cutting 5d tensor")
             # 如果输出是通道是二，保留第二个通道
-            if logits.shape[1] == 2:
-                logits = logits[:, 1, :, :, :]
-                output = output[:, 1, :, :, :]
-            if target.shape[1] == 2:
-                target = target[:, 1, :, :, :]
-            data = data.squeeze(0).squeeze(0)
+            if logits.shape[0] == 2:
+                logits = logits[1:2, :, :, :]
+            if output.shape[0] == 2:
+                output = output[1:2, :, :, :]
+            if target.shape[0] == 2:
+                target = target[1:2, :, :, :]
+            data = data.squeeze(0)
             logits = logits.squeeze(0)
             output = output.squeeze(0)
             target = target.squeeze(0)
@@ -451,6 +453,7 @@ class box:
         # if self.signatures is None:
         #     self.signatures = infer_signature(first_batch, logits)
         # 可视化
+
         return data, logits, output, target
 
     def save_model(self, model, epoch, filename=None):
