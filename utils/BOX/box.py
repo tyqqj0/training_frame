@@ -522,7 +522,7 @@ class box:
             model_name += "_best"
 
         # 检查模型名称
-        if model_name != set_model_name:
+        if set_model_name not in model_name:
             raise ValueError("model_name {} not match set_model_name {}".format(model_name, set_model_name))
         # 从模型注册中心加载模型
         print("loading model")
