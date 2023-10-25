@@ -39,7 +39,7 @@
       "help": "new run name"
     },
     "model_name": {
-      "default": "unetr",
+      "default": "unet",
       "type": "str",
       "help": "model name"
     },

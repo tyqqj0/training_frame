@@ -284,8 +284,8 @@ def run_training(
 
 def calculate_max_component(image_3d, connectivity=3):
     print("calculating max component")
-    plt.imshow(image_3d[64])
-    plt.show()
+    # plt.imshow(image_3d[64])
+    # plt.show()
     # connectivity: 是指连通组件的连接方式，可以是1,2,3,4,6
     # 使用 `label` 函数来找到并标记所有的连通组件
     start_time = time.time()

@@ -13,7 +13,7 @@
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main_train.py" />
-    <option name="PARAMETERS" value="--infer_overlap=0.5 --vis_2d --vis_3d -n=train --train --new_run_name=unet_run_1" />
+    <option name="PARAMETERS" value="--infer_overlap=0.5 --vis_2d --vis_3d -n=train --train --new_run_name=unet_run_2" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

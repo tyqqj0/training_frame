@@ -39,7 +39,7 @@ def main():
     # utils.arg.parser.save_parser_to_json(parser, "./UNTER.json")
     # utils.arg.parser.save_parser_to_json(box.parser_cfg_loader()[1], "./box.json")
     # return
-    logrbox = box.box(mode='debug')
+    logrbox = box.box(mode='train')
     logrbox.check_args()
     # print(logrbox.args)
     # _, parser = box.parser_cfg_loader()
@@ -81,7 +81,7 @@ def main_worker(args, logrbox):
         to_onehot_y=args.out_channels, softmax=True, squared_pred=True, smooth_nr=args.smooth_nr,
         smooth_dr=args.smooth_dr
     )
-    logrbox.set_model_inferer(model, args.out_channels, inf_size)
+    logrbox.set_model_inferer(model, args.out_channels, inf_size, args.threshold)
     # 设置小工具
     post_label = AsDiscrete(to_onehot=args.out_channels, n_classes=args.out_channels)  # 将数据onehot 应该是
     post_pred = AsDiscrete(argmax=True, to_onehot=args.out_channels, n_classes=args.out_channels)

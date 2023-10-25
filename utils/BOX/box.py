@@ -82,6 +82,7 @@ def parser_cfg_loader(mode='train', path=""):
 
 class box:
     def __init__(self, mode='train', path=''):
+        self.threshold = None
         self.post_pred = None
         self.post_label = None
         args = parser_cfg_loader(mode=mode, path=path)
@@ -209,9 +210,9 @@ class box:
         print("BOX load args: \n", json.dumps(vars(self.args), indent=4))
         return
 
-    def set_model_inferer(self, model, out_channels, inf_size=[96, 96, 96]):
+    def set_model_inferer(self, model, out_channels, inf_size=[96, 96, 96], threshold=0):
         print("set model inferer")
-
+        self.threshold = threshold
         self.post_label = AsDiscrete(to_onehot=out_channels, n_classes=out_channels)  # 将数据onehot 应该是
         self.post_pred = AsDiscrete(argmax=True, to_onehot=out_channels, n_classes=out_channels)
         self.model_inferer = partial(
@@ -280,8 +281,8 @@ class box:
     def update_in_epoch(self, step, out, target, batch_size=-1, stage="train"):
         # print("BOX updating")
         # 如果out是概率，我们需要转换成预测, 判断最小值是否为0
-        if out.min() < 0:
-            out = out < 0
+        # if out.min() < 0:
+        out = out > self.threshold
 
         # 如果当前阶段是训练（train）阶段，我们需要进行参数更新
         if stage == "train":
@@ -338,7 +339,7 @@ class box:
                 # 显示
                 print("visualize epoch: ", self.epoch + 1)
                 start_time = time.time()
-                data, logits, output, target = self.predict_one_3d(loader, model)
+                data, logits, output, target = self.predict_one_3d(loader, model, self.threshold)
                 if self.vis_2d:
                     utils.BOX.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, logits=logits, outputs=output,
                                          label=target,
