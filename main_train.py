@@ -62,11 +62,12 @@ def main_worker(args, logrbox):
     # 设置cuda
     set_cuda(args)
 
-
-
     # 获取模型并读取
     model, start_epoch = get_model(args.model_name, logrbox)
-
+    if args.model_name == "unetr":
+        args.threshold = 0
+    elif args.model_name == "unet":
+        args.threshold = 0.5
     # 获取数据读取器
     # TODO: 重写数据读取器
     loader = get_loader('./data/vessel.json')  # 可以指定数据配置
@@ -74,7 +75,6 @@ def main_worker(args, logrbox):
     # 设置模型的推理器
     # TODO: 这个不好看写法，改成自动的更好
     inf_size = [args.roi_x, args.roi_y, args.roi_z]
-
 
     # 设置损失函数
     dice_loss = DiceCELoss(

@@ -6,6 +6,11 @@
       "default": "unet",
       "type": "str"
     },
+    "threshold": {
+      "help": "argmax threshold",
+      "default": 0.5,
+      "type": "float"
+    },
     "test_mode": {
       "help": "test mode",
       "default": false,

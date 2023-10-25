@@ -340,7 +340,7 @@ class box:
                 start_time = time.time()
                 data, logits, output, target = self.predict_one_3d(loader, model)
                 if self.vis_2d:
-                    utils.BOX.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, logits=logits, outputs=logits>0,
+                    utils.BOX.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, logits=logits, outputs=output,
                                          label=target,
                                          add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
@@ -387,7 +387,7 @@ class box:
                 end_time = time.time()
                 print("vis using time: ", end_time - start_time)
 
-    def predict_one_3d(self, data, model):
+    def predict_one_3d(self, data, model, threshold=0):
         # 如果data是一整个loader, 找到第一个batch
 
         first_batch = None
@@ -423,7 +423,8 @@ class box:
 
         data = first_batch.squeeze(0).cpu()
         logits = logits.squeeze(0).cpu()
-        output = self.post_pred(logits)
+        # output = self.post_pred(logits)
+        output = logits > threshold
         target = self.post_label(target.squeeze(0))
         if 0:
             print("data shape:", data.shape)

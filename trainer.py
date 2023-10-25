@@ -182,7 +182,7 @@ def save_checkpoint(model, epoch, args, filename="model.pt", best_acc=0, optimiz
     print("Saving checkpoint", filename)
 
 
-def additional_matrics(model_inferer, loader, epoch):
+def additional_matrics(model_inferer, loader, epoch, threshold):
     # 预测方法可以取
     # 找到第一个batch
     first_batch = []
@@ -203,7 +203,7 @@ def additional_matrics(model_inferer, loader, epoch):
         logits = logits.squeeze(0)
         logits = logits.squeeze(0)
     # 不论logits是不是概率
-    logits = logits > 0
+    logits = logits > threshold
     max_volume = calculate_max_component(logits.cpu().numpy())
     mlflow.log_metric("max_volume", max_volume, step=epoch)
 
@@ -271,7 +271,7 @@ def run_training(
                 )
             if val_avg_acc > val_acc_max:
                 val_acc_max = val_avg_acc
-        additional_matrics(model_inferer, val_loader, epoch)  # TODO: 这个写的不好看
+        additional_matrics(model_inferer, val_loader, epoch, args.threshold)  # TODO: 这个写的不好看
         box.visualizes(model, val_loader)
         box.save_model(model, epoch)
         if scheduler is not None:
