@@ -66,7 +66,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=No
             param.grad = None
         with autocast(enabled=args.amp):  #
             logits = model(data)
-            # print(logits.shape, target.shape)
+            print(logits.shape, target.shape)
             loss = loss_func(logits, target)  # 这里出现报错了
         if args.amp:
             scaler.scale(loss).backward()

@@ -74,14 +74,14 @@ def main_worker(args, logrbox):
     # 设置模型的推理器
     # TODO: 这个不好看写法，改成自动的更好
     inf_size = [args.roi_x, args.roi_y, args.roi_z]
-    logrbox.set_model_inferer(model)
+
 
     # 设置损失函数
     dice_loss = DiceCELoss(
         to_onehot_y=args.out_channels, softmax=True, squared_pred=True, smooth_nr=args.smooth_nr,
         smooth_dr=args.smooth_dr
     )
-
+    logrbox.set_model_inferer(model, args.out_channels, inf_size)
     # 设置小工具
     post_label = AsDiscrete(to_onehot=args.out_channels, n_classes=args.out_channels)  # 将数据onehot 应该是
     post_pred = AsDiscrete(argmax=True, to_onehot=args.out_channels, n_classes=args.out_channels)

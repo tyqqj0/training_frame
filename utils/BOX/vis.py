@@ -19,37 +19,37 @@ from monai.visualize import GradCAM
 # tensorboard --logdir=./runs/test/vis
 
 
-def vis_2d(path, epoch, image, outputs, label=None, add_text='', rank=0):
+def vis_2d(path, epoch, image, logits, outputs, label=None, add_text='', rank=0):
     # 传入当前批次，参数，图像，输出，标签
     # 判断是否应该可视化
     # print("vis")
 
-    # 如果数据不是list，使用decollate_batch将数据转换为list
-    if not isinstance(image, list):
-        image = decollate_batch(image)
-    if not isinstance(outputs, list):
-        outputs = decollate_batch(outputs)
-    if not isinstance(label, list):
-        if label is not None:
-            label = decollate_batch(label)
+    # 检查数据维度是否是3
+    if len(image.shape) != 3:
+        raise ValueError("image shape is not 3")
+    if len(outputs.shape) != 3:
+        raise ValueError("outputs shape is not 3")
+    if len(label.shape) != 3:
+        raise ValueError("label shape is not 3")
     n = 64
-    try:
-        img, out, out_class, lb = image[0][0][n], outputs[0][1][n], outputs[0][1][n] > 0, label[0][0][n]
-    except:
-        print("image:", image.shape)
-        print("outputs", outputs.shape)
-        print("label:", label.shape)
-        raise ValueError("check the shape")
+    # try:
+    #     img, out, out_class, lb = image[n], outputs[0][1][n], outputs[0][1][n] > 0, label[0][0][n]
+    # except:
+    #     print("image:", image.shape)
+    #     print("outputs", outputs.shape)
+    #     print("label:", label.shape)
+    #     raise ValueError("check the shape")
     # 缩放范围到0-1
+    img, out, out_class, lb = image[n], logits[n], outputs[n], label[n]
     img = (img - img.min()) / (img.max() - img.min())
     out = (out - out.min()) / (out.max() - out.min())
     # out_class = (out_class - out_class.min()) / (out_class.max() - out_class.min())
     lb = (lb - lb.min()) / (lb.max() - lb.min())
 
-    img = img.unsqueeze(0)
-    out = out.unsqueeze(0)
-    out_class = out_class.unsqueeze(0)
-    lb = lb.unsqueeze(0)
+    # img = img.unsqueeze(0)
+    # out = out.unsqueeze(0)
+    # out_class = out_class.unsqueeze(0)
+    # lb = lb.unsqueeze(0)
 
     # 添加图像文本提示
 
@@ -61,19 +61,19 @@ def vis_2d(path, epoch, image, outputs, label=None, add_text='', rank=0):
         # print('combined.shape', combined.shape)
 
     # 将 PyTorch tensor 转换为 numpy array
-    img_np = img.squeeze().cpu().numpy()
-    out_np = out.squeeze().cpu().numpy()
-    out_class_np = out_class.squeeze().cpu().numpy()
-    lb_np = lb.squeeze().cpu().numpy()
+    img_np = img.cpu().numpy()
+    out_np = out.cpu().numpy()
+    out_class_np = out_class.cpu().numpy()
+    lb_np = lb.cpu().numpy()
 
     # 创建一个 1x4 的子图，每个图像都有自己的小标题
     fig, axs = plt.subplots(1, 4, figsize=(20, 5))
     axs[0].imshow(img_np, cmap='gray')
     axs[0].set_title('Image')
     axs[1].imshow(out_np, cmap='gray')
-    axs[1].set_title('Output Probability')
+    axs[1].set_title('Logits')
     axs[2].imshow(out_class_np, cmap='gray')
-    axs[2].set_title('Output Class')
+    axs[2].set_title('Output')
     axs[3].imshow(lb_np, cmap='gray')
     axs[3].set_title('Label')
 
@@ -82,24 +82,24 @@ def vis_2d(path, epoch, image, outputs, label=None, add_text='', rank=0):
     plt.close()
 
 
-def vis_2d_tensorboard(path, epoch, image, outputs, label=None, add_text='', rank=0):
+def vis_2d_tensorboard(path, epoch, image, logits, outputs, label=None, add_text='', rank=0):
     # 传入当前批次，参数，图像，输出，标签
     # 判断是否应该可视化
     # print("vis")
 
-    # 如果数据不是list，使用decollate_batch将数据转换为list
-    if not isinstance(image, list):
-        image = decollate_batch(image)
-    if not isinstance(outputs, list):
-        outputs = decollate_batch(outputs)
-    if not isinstance(label, list):
-        if label is not None:
-            label = decollate_batch(label)
+    # 检查数据维度是否是3
+    if len(image.shape) != 3:
+        raise ValueError("image shape is not 3")
+    if len(outputs.shape) != 3:
+        raise ValueError("outputs shape is not 3")
+    if len(label.shape) != 3:
+        raise ValueError("label shape is not 3")
+
     n = 64
-    img, out, lb = image[0][0][n], outputs[0][1][n], label[0][0][n]
-    img = img.unsqueeze(0)
-    out = out.unsqueeze(0)
-    lb = lb.unsqueeze(0)
+    img, out, lb = image[n], outputs[n], label[n]
+    # img = img.unsqueeze(0)
+    # out = out.unsqueeze(0)
+    # lb = lb.unsqueeze(0)
 
     if 0:
         print('img.shape', img.shape)
@@ -127,22 +127,21 @@ def vis_2d_tensorboard(path, epoch, image, outputs, label=None, add_text='', ran
     writer.close()
 
 
-def vis_mha(path, epoch, image, outputs, label=None, add_text='', rank=0):
+def vis_mha(path, epoch, image, logits, outputs, label=None, add_text='', rank=0):
     # 传入当前批次，参数，图像，输出，标签
     # 判断是否应该可视化
     # print("vis3d")
 
-    # 如果数据不是list，使用decollate_batch将数据转换为list
-    if not isinstance(image, list):
-        image = decollate_batch(image)
-    if not isinstance(outputs, list):
-        outputs = decollate_batch(outputs)
-    if not isinstance(label, list):
-        if label is not None:
-            label = decollate_batch(label)
+    # 检查数据维度是否是3
+    if len(image.shape) != 3:
+        raise ValueError("image shape is not 3")
+    if len(logits.shape) != 3:
+        raise ValueError("logits shape is not 3")
+    if len(label.shape) != 3:
+        raise ValueError("label shape is not 3")
 
     tb_dir = os.path.join(path)
-    img, out, lb = image[0][0].cpu().numpy(), outputs[0][1].cpu().numpy(), label[0][0].cpu().numpy()
+    img, out, lb = image, logits, label
 
     img = sitk.GetImageFromArray(img.astype(numpy.float64))
     out = sitk.GetImageFromArray(out.astype(numpy.float64))

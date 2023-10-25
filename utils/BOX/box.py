@@ -12,6 +12,7 @@ import json
 import argparse
 
 from mlflow import MlflowClient
+from monai.transforms import AsDiscrete
 
 import utils.BOX.vis
 import utils.BOX.evl
@@ -81,6 +82,8 @@ def parser_cfg_loader(mode='train', path=""):
 
 class box:
     def __init__(self, mode='train', path=''):
+        self.post_pred = None
+        self.post_label = None
         args = parser_cfg_loader(mode=mode, path=path)
         # stop_all_runs()
         # return
@@ -206,9 +209,11 @@ class box:
         print("BOX load args: \n", json.dumps(vars(self.args), indent=4))
         return
 
-    def set_model_inferer(self, model, inf_size=[96, 96, 96]):
+    def set_model_inferer(self, model, out_channels, inf_size=[96, 96, 96]):
         print("set model inferer")
 
+        self.post_label = AsDiscrete(to_onehot=out_channels, n_classes=out_channels)  # 将数据onehot 应该是
+        self.post_pred = AsDiscrete(argmax=True, to_onehot=out_channels, n_classes=out_channels)
         self.model_inferer = partial(
             sliding_window_inference,
             roi_size=inf_size,
@@ -327,44 +332,16 @@ class box:
     # self.visualizes(loader, model)
 
     def visualizes(self, model, loader):
-        first_batch = None
-        for i, data in enumerate(loader):
-            first_batch = data
-            break
-        if first_batch is None:
-            raise ValueError("first batch is None")
+
         if self.log_frq is not None and self.use_vis:
             if (self.epoch + 1) % self.log_frq == 0:
                 # 显示
                 print("visualize epoch: ", self.epoch + 1)
                 start_time = time.time()
-                # 测试一次运行的
-                with torch.no_grad():
-                    if isinstance(first_batch, list):
-                        data, target = first_batch
-                    else:
-                        data, target = first_batch["image"], first_batch["label"]
-                    data, target = data.cuda(self.rank), target.cuda(self.rank)
-                    # print(data.shape)
-                    with autocast(enabled=True):  # TODO: 这里是干啥的
-                        if self.model_inferer is not None and data.shape[-1] != 96:
-                            logits = self.model_inferer(data)
-                        else:
-                            if data.shape[-1] == 96:
-                                # logits = model(data)
-                                print("input not match and model_inferer is None, please set model_inferer")
-                            logits = model(data)
-                    # logits = model(data)
-
-                    # logits = model(data)
-                    if not logits.is_cuda:
-                        target = target.cpu()
-
-                    # if self.signatures is None:
-                    #     self.signatures = infer_signature(data, logits)
-                # 可视化
+                data, logits, output, target = self.predict_one_3d(loader, model)
                 if self.vis_2d:
-                    utils.BOX.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
+                    utils.BOX.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, logits=logits, outputs=output,
+                                         label=target,
                                          add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
                     if not os.path.exists(self.vis_2d_cache_loc):
@@ -377,7 +354,8 @@ class box:
                     print('vis_2d complete')
 
                 if self.vis_2d_tb:
-                    utils.BOX.vis.vis_2d_tensorboard(self.vis_2d_tb_cache_loc, self.epoch, image=data, outputs=logits,
+                    utils.BOX.vis.vis_2d_tensorboard(self.vis_2d_tb_cache_loc, self.epoch, image=data, logits=logits,
+                                                     outputs=output,
                                                      label=target,
                                                      add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
@@ -391,7 +369,8 @@ class box:
                     print('vis_2d_tensorboard complete')
 
                 if self.vis_3d:
-                    utils.BOX.vis.vis_mha(self.vis_3d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
+                    utils.BOX.vis.vis_mha(self.vis_3d_cache_loc, self.epoch, image=data, logits=logits, outputs=output,
+                                          label=target,
                                           add_text=self.epoch_stage, rank=self.rank)
                     # 检查缓存位置是否存在
                     if not os.path.exists(self.vis_3d_cache_loc):
@@ -407,6 +386,72 @@ class box:
                     print('vis_3d complete')
                 end_time = time.time()
                 print("vis using time: ", end_time - start_time)
+
+    def predict_one_3d(self, data, model):
+        # 如果data是一整个loader, 找到第一个batch
+
+        first_batch = None
+        try:
+            for i, adata in enumerate(data):
+                first_batch = adata
+                break
+            if first_batch is None:
+                raise ValueError("first batch is None")
+        except:
+            first_batch = data
+        # 测试一次运行的
+        with torch.no_grad():
+            if isinstance(first_batch, list):
+                first_batch, target = first_batch
+            else:
+                first_batch, target = first_batch["image"], first_batch["label"]
+            first_batch, target = first_batch.cuda(self.rank), target.cuda(self.rank)
+            # print(first_batch.shape)
+            with autocast(enabled=True):  # TODO: 这里是干啥的
+                if self.model_inferer is not None and first_batch.shape[-1] != 96:
+                    logits = self.model_inferer(first_batch)
+                else:
+                    if first_batch.shape[-1] == 96:
+                        # logits = model(first_batch)
+                        print("input not match and model_inferer is None, please set model_inferer")
+                    logits = model(first_batch)
+            # logits = model(first_batch)
+
+            # logits = model(first_batch)
+            if not logits.is_cuda:
+                target = target.cpu()
+
+        data = first_batch.cpu()
+        logits = logits.cpu()
+        output = self.post_pred(logits)
+        target = self.post_label(target)
+        if 1:
+            print("data shape:", first_batch.shape)
+            print("logits shape:", logits.shape)
+            print("output shape:", output.shape)
+            print("target shape:", target.shape)
+        # 处理数据到三维张量
+        # (batch, channel, x, y, z) -> (x, y, z)
+        if len(logits.shape) == 5:  # 检查张量的维度是否为5
+            print("cutting 5d tensor")
+            # 如果输出是通道是二，保留第二个通道
+            if logits.shape[1] == 2:
+                logits = logits[:, 1, :, :, :]
+                output = output[:, 1, :, :, :]
+            if target.shape[1] == 2:
+                target = target[:, 1, :, :, :]
+            data = data.squeeze(0).squeeze(0)
+            logits = logits.squeeze(0)
+            output = output.squeeze(0)
+            target = target.squeeze(0)
+
+        else:
+            raise ValueError("logits shape not match")
+
+        # if self.signatures is None:
+        #     self.signatures = infer_signature(first_batch, logits)
+        # 可视化
+        return data, logits, output, target
 
     def save_model(self, model, epoch, filename=None):
         speed = self.timer.end()

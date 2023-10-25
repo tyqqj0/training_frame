@@ -1,0 +1,18 @@
+{
+    "DEFAULT": {
+        "param1": {
+            "default": "default1",
+            "type": "str",
+            "help": "Description for param1"
+        },
+        "param2": {
+            "default": "default2",
+            "type": "str",
+            "help": "Description for param2"
+        },
+        "param3": {
+            "action": "store_true",
+            "help": "Description for param3"
+        }
+    }
+}
