@@ -12,6 +12,7 @@ import torch
 import os
 import SimpleITK as sitk
 from torchvision.utils import save_image
+import matplotlib.pyplot as plt
 
 from monai.visualize import GradCAM
 

@@ -425,7 +425,7 @@ class box:
         logits = logits.squeeze(0).cpu()
         output = self.post_pred(logits)
         target = self.post_label(target.squeeze(0))
-        if 1:
+        if 0:
             print("data shape:", data.shape)
             print("logits shape:", logits.shape)
             print("output shape:", output.shape)
