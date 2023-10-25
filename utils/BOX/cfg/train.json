@@ -54,7 +54,7 @@
       "help": "tag id, ***commanded to set***"
     },
     "val_frq": {
-      "default": 50,
+      "default": 5,
       "type": "int",
       "help": "val frequency"
     },
