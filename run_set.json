@@ -6,6 +6,16 @@
       "default": "unet",
       "type": "str"
     },
+    "load_run_id": {
+      "help": "run id to load",
+      "default": "",
+      "type": "str"
+    },
+    "load_model_name": {
+      "help": "model name to load",
+      "default": "",
+      "type": "str"
+    },
     "threshold": {
       "help": "argmax threshold",
       "default": 0.5,

@@ -79,7 +79,7 @@ def vis_2d(path, epoch, image, logits, outputs, label=None, add_text='', rank=0)
     axs[3].set_title('Label')
 
     # 保存整个子图
-    plt.savefig(os.path.join(path, f'combined{add_text}_{epoch + 1}.png'))
+    plt.savefig(os.path.join(path, f'combined{add_text}_{epoch + 1:05}.png'))
     plt.close()
 
 
@@ -122,7 +122,7 @@ def vis_2d_tensorboard(path, epoch, image, logits, outputs, label=None, add_text
     # Concatenate along the width dimension
 
     # Now we can add the combined image to TensorBoard
-    writer.add_image('combined' + add_text, combined, epoch + 1)
+    writer.add_image('combined' + add_text, combined, f"{epoch + 1:05}")
 
     # Don't forget to close the writer when you're done
     writer.close()
@@ -154,9 +154,9 @@ def vis_mha(path, epoch, image, logits, outputs, label=None, add_text='', rank=0
     if not os.path.exists(file_name):
         os.makedirs(file_name)
 
-    file_name_img = file_name + '/' + str(epoch + 1) + '_image.mha'
-    file_name_out = file_name + '/' + str(epoch + 1) + '_output.mha'
-    file_name_lb = file_name + '/' + str(epoch + 1) + '_label.mha'
+    file_name_img = f"{file_name}/{epoch + 1:05}_image.mha"
+    file_name_out = f"{file_name}/{epoch + 1:05}_output.mha"
+    file_name_lb = f"{file_name}/{epoch + 1:05}_label.mha"
 
     sitk.WriteImage(img, file_name_img)
     sitk.WriteImage(out, file_name_out)

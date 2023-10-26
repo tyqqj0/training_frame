@@ -40,7 +40,7 @@ def main():
     # utils.arg.parser.save_parser_to_json(parser, "./UNTER.json")
     # utils.arg.parser.save_parser_to_json(box.parser_cfg_loader()[1], "./box.json")
     # return
-    logrbox = box.box(mode='debug')
+    logrbox = box.box(mode='train')
     logrbox.check_args()
     # print(logrbox.args)
     # _, parser = box.parser_cfg_loader()
@@ -64,11 +64,14 @@ def main_worker(args, logrbox):
     set_cuda(args)
 
     # 获取模型并读取
-    model, start_epoch = get_model(args.model_name, logrbox)
-    if args.model_name == "unetr":
+    model, start_epoch = get_model(args.model_name, logrbox, args.load_run_id, args.load_model_name)
+    if args.out_channels == 1:
+        args.threshold = 0.5
+    elif args.out_channels == 2:
         args.threshold = 0
-    elif args.model_name == "unet":
-        args.threshold = 0
+    else:
+        raise ValueError("Unsupported out_channels now" + str(args.out_channels))
+
     # 获取数据读取器
     # TODO: 重写数据读取器
     loader = get_loader('./data/vessel.json')  # 可以指定数据配置
@@ -156,7 +159,7 @@ def set_optim(model, optim_name="adamw", optim_lr=1e-4, reg_weight=1e-5, momentu
     return optimizer
 
 
-def get_model(model_name, logrbox, distributed=False, gpu=0, load_run_id=None):
+def get_model(model_name, logrbox, distributed=False, gpu=0, load_run_id=None, load_model_name=None):
     if model_name == "unetr":
         args = utils.arg.get_args("./networks/UNETR/UNETR.json")
         model = UNETR(
@@ -178,7 +181,8 @@ def get_model(model_name, logrbox, distributed=False, gpu=0, load_run_id=None):
                      strides=(2, 2, 2, 2, 2), num_res_units=2)
     else:
         raise ValueError("Unsupported model " + str(model_name))
-    model, start_epoch, best_acc = logrbox.load_model(model, model_name, load_run_id=load_run_id)
+    model, start_epoch, best_acc = logrbox.load_model(model, model_name, load_run_id=load_run_id,
+                                                      load_model_name=load_model_name)
 
     model.cuda(0)
 

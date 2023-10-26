@@ -48,7 +48,7 @@ class evl:
         self.image = len
         self.epoch = epoch
 
-    def update(self, out, target, batch_size=-1):
+    def update(self, out, target, batch_size=-1, stage=''):
         if batch_size == -1:
             batch_size = out.shape[0]
         # 检查输入是否为概率
@@ -65,8 +65,8 @@ class evl:
         self.IOU.append(iou)
         self.DSC.append(dsc)
         self.PRE.append(pre)
-        print("epoch:{0:d}\tacc:{1:.4f}\tsen:{2:.4f}\tspe:{3:.4f}\tiou:{4:.4f}\tdsc:{5:.4f}\tpre:{6:.4f}".format(
-            self.epoch + 1, acc, sen, spe, iou, dsc, pre))
+        print("{} epoch:{0:d}\tacc:{1:.4f}\tsen:{2:.4f}\tspe:{3:.4f}\tiou:{4:.4f}\tdsc:{5:.4f}\tpre:{6:.4f}".format(
+            stage, self.epoch + 1, acc, sen, spe, iou, dsc, pre))
         return {"ACC": acc, "SEN": sen, "SPE": spe, "IOU": iou, "DSC": dsc, "PRE": pre}
 
     # print(

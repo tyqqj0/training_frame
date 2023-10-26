@@ -293,7 +293,7 @@ class box:
 
         # 如果当前阶段是训练（train）阶段，我们需要进行参数更新
         if stage == "train":
-            metrics_dict = self.evler.update(out, target, batch_size)  # 暂时
+            metrics_dict = self.evler.update(out, target, batch_size, stage)  # 暂时
             # 记录和上传参数
             for metric, value in metrics_dict.items():
                 # step = self.epoch + step * 1 / self.loader_len # 不能用浮点
@@ -504,14 +504,14 @@ class box:
                                      signature=self.signatures)
 
     def load_model(self, model, set_model_name="unetr", load_run_id=None, dict=True, model_version='latest',
-                   best_model=True):
+                   best_model=True, load_model_name=None):
         self.model_name = set_model_name
         # 加载模型
         # 检查是否应加载模型
         if not self.args.is_continue:
             return model, 0, -1
         # 默认从继续运行的run_id中加载模型
-        if load_run_id is None:
+        if load_run_id is None or load_run_id is '':
             load_run_id = self.run_id
         if load_run_id is None:
             return
@@ -526,6 +526,8 @@ class box:
 
         # 使用运行的名称作为模型名称
         model_name = run.data.tags['mlflow.runName']
+        if load_model_name is not None and load_model_name is not '':
+            model_name = load_model_name
         if best_model:
             model_name += "_best"
 
