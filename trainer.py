@@ -148,7 +148,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
 
             acc = acc_func(y_pred=val_output_convert, y=val_labels_convert)
             acc = acc.cuda(args.rank)
-            print('here')
+            # print('here')
 
             if args.distributed:
                 acc_list = distributed_all_gather([acc], out_numpy=True, is_valid=idx < loader.sampler.valid_length)
