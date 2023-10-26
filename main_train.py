@@ -64,7 +64,8 @@ def main_worker(args, logrbox):
     set_cuda(args)
 
     # 获取模型并读取
-    model, start_epoch = get_model(args.model_name, logrbox, args.load_run_id, args.load_model_name)
+    model, start_epoch = get_model(args.model_name, logrbox, load_run_id=args.load_run_id,
+                                   load_model_name=args.load_model_name)
     if args.out_channels == 1:
         args.threshold = 0.5
     elif args.out_channels == 2:

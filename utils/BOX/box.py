@@ -505,10 +505,12 @@ class box:
 
     def load_model(self, model, set_model_name="unetr", load_run_id=None, dict=True, model_version='latest',
                    best_model=True, load_model_name=None):
+        print(load_run_id)
         self.model_name = set_model_name
         # 加载模型
         # 检查是否应加载模型
-        if not self.args.is_continue and load_run_id is None and load_model_name is None:
+        if not self.args.is_continue and (load_run_id is None or load_run_id is '') and (
+                load_model_name is None or load_model_name is ''):
             return model, 0, -1
         # 默认从继续运行的run_id中加载模型
         if load_run_id is None or load_run_id is '':
