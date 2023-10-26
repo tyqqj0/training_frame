@@ -94,11 +94,6 @@
       "default": 96,
       "type": "int"
     },
-    "dropout_rate": {
-      "help": "dropout rate",
-      "default": 0.0,
-      "type": "float"
-    },
     "RandFlipd_prob": {
       "help": "RandFlipd aug probability",
       "default": 0.2,

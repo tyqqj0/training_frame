@@ -1,3 +1,4 @@
+import os
 from functools import partial
 
 import numpy as np
@@ -39,7 +40,7 @@ def main():
     # utils.arg.parser.save_parser_to_json(parser, "./UNTER.json")
     # utils.arg.parser.save_parser_to_json(box.parser_cfg_loader()[1], "./box.json")
     # return
-    logrbox = box.box(mode='train')
+    logrbox = box.box(mode='debug')
     logrbox.check_args()
     # print(logrbox.args)
     # _, parser = box.parser_cfg_loader()
@@ -67,7 +68,7 @@ def main_worker(args, logrbox):
     if args.model_name == "unetr":
         args.threshold = 0
     elif args.model_name == "unet":
-        args.threshold = 0.5
+        args.threshold = 0
     # 获取数据读取器
     # TODO: 重写数据读取器
     loader = get_loader('./data/vessel.json')  # 可以指定数据配置
@@ -155,7 +156,7 @@ def set_optim(model, optim_name="adamw", optim_lr=1e-4, reg_weight=1e-5, momentu
     return optimizer
 
 
-def get_model(model_name, logrbox, distributed=False, gpu=0):
+def get_model(model_name, logrbox, distributed=False, gpu=0, load_run_id=None):
     if model_name == "unetr":
         args = utils.arg.get_args("./networks/UNETR/UNETR.json")
         model = UNETR(
@@ -173,11 +174,11 @@ def get_model(model_name, logrbox, distributed=False, gpu=0):
             dropout_rate=args.dropout_rate,
         )
     elif model_name == "unet":
-        model = UNet(spatial_dims=3, in_channels=1, out_channels=1, channels=(16, 32, 64, 128, 256, 512),
+        model = UNet(spatial_dims=3, in_channels=1, out_channels=2, channels=(16, 32, 64, 128, 256, 512),
                      strides=(2, 2, 2, 2, 2), num_res_units=2)
     else:
         raise ValueError("Unsupported model " + str(model_name))
-    model, start_epoch, best_acc = logrbox.load_model(model, model_name)
+    model, start_epoch, best_acc = logrbox.load_model(model, model_name, load_run_id=load_run_id)
 
     model.cuda(0)
 
@@ -214,11 +215,11 @@ def set_cuda(args):
         print("Batch size is:", args.batch_size, "epochs", args.max_epochs)
 
 
-# os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
-# CUDA_LAUNCH_BLOCKING = 1
-# torch.backends.cudnn.enable = True
-# torch.backends.cudnn.benchmark = True
-# TORCH_USE_CUDA_DSA = 1
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+CUDA_LAUNCH_BLOCKING = 1
+torch.backends.cudnn.enable = True
+torch.backends.cudnn.benchmark = True
+TORCH_USE_CUDA_DSA = 1
 
 if __name__ == "__main__":
     print(torch.__version__)

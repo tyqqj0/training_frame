@@ -110,6 +110,7 @@ class box:
         self.vis_2d_tb = args.vis_2d_tb
         self.log_frq = args.log_frq
         self.save_frq = args.save_frq
+        self.vis_3d_frq = args.vis_3d_frq
         self.vis_2d_slice_loc = 96 / 2
         self.vis_2d_cache_loc = './run_cache/vis_2d'
         self.vis_2d_tb_cache_loc = './run_cache/vis_2d_tb'

@@ -1,10 +1,16 @@
 {
-  "name": "debug",
+  "name": "train",
   "DEFAULT": {
     "mode": {
       "default": "train",
       "type": "str",
       "help": "running mode"
+    },
+    "amp": {
+      "default": true,
+      "type": null,
+      "help": "use amp for training",
+      "action": "store_true"
     },
     "is_continue": {
       "default": false,
@@ -13,7 +19,7 @@
       "action": "store_true"
     },
     "exp_name": {
-      "default": "train",
+      "default": "debug",
       "type": "str",
       "help": "experiment name, ***must be set***"
     },
@@ -32,11 +38,6 @@
       "type": "str",
       "help": "new run name"
     },
-    "model_name": {
-      "default": "unetr",
-      "type": "str",
-      "help": "model name"
-    },
     "log_dir": {
       "default": "./runs",
       "type": "str",
@@ -46,11 +47,6 @@
       "default": null,
       "type": "str",
       "help": "tag id, ***commanded to set***"
-    },
-    "log_frq": {
-      "default": 5,
-      "type": "int",
-      "help": "log frequency"
     },
     "val_frq": {
       "default": 1,
@@ -73,6 +69,11 @@
       "help": "visualize 2d images",
       "action": "store_true"
     },
+    "log_frq": {
+      "default": 1,
+      "type": "int",
+      "help": "log frequency"
+    },
     "vis_3d": {
       "default": false,
       "type": null,
@@ -80,7 +81,7 @@
       "action": "store_true"
     },
     "vis_3d_frq": {
-      "default": 500,
+      "default": 250,
       "type": "int",
       "help": "visualize 3d images frequency"
     },

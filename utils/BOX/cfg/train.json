@@ -54,7 +54,7 @@
       "help": "val frequency"
     },
     "save_frq": {
-      "default": 500,
+      "default": 100,
       "type": "int",
       "help": "save frequency, disabled in test and val"
     },
@@ -81,7 +81,7 @@
       "action": "store_true"
     },
     "vis_3d_frq": {
-      "default": 500,
+      "default": 250,
       "type": "int",
       "help": "visualize 3d images frequency"
     },

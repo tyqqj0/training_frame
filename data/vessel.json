@@ -118,35 +118,35 @@
         },
         {
             "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal058.mha",
-            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal057.mha"
-        },
-        {
-            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal060.mha",
             "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal058.mha"
         },
         {
-            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal063.mha",
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal060.mha",
             "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal060.mha"
         },
         {
-            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal064.mha",
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal063.mha",
             "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal063.mha"
         },
         {
-            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal070.mha",
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal064.mha",
             "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal064.mha"
         },
         {
-            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal071.mha",
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal070.mha",
             "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal070.mha"
         },
         {
-            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal074.mha",
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal071.mha",
             "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal071.mha"
         },
         {
-            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal086.mha",
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal074.mha",
             "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal074.mha"
+        },
+        {
+            "image": "D:/zhangchaoran/miccai_achieve/data/train/image/Normal086.mha",
+            "label": "D:/zhangchaoran/miccai_achieve/data/train/label/Normal086.mha"
         }
     ],
     "val": [
