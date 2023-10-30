@@ -126,8 +126,8 @@ def main_worker(args, logrbox):
             post_pred=post_pred,
             box=logrbox
         )
-        if args.save_to_test:
-            model.save(args)
+        # if args.save_to_test:
+        #     model.save(args)
     return accuracy
 
 
