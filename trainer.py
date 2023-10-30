@@ -21,6 +21,7 @@ from utils.utils import distributed_all_gather
 from skimage.measure import label, regionprops
 import mlflow
 import matplotlib.pyplot as plt
+from skimage import morphology, measure
 
 from monai.data import decollate_batch
 
@@ -209,6 +210,8 @@ def additional_matrics(model_inferer, loader, epoch, threshold):
     logits = logits > threshold
     max_volume = calculate_max_component(logits.cpu().numpy())
     mlflow.log_metric("max_volume", max_volume, step=epoch)
+    mean_vessel_length = calculate_mean_vessel_length(logits.cpu().numpy())
+    mlflow.log_metric("mean_vessel_length", mean_vessel_length, step=epoch)
 
 
 def run_training(
@@ -305,3 +308,24 @@ def calculate_max_component(image_3d, connectivity=3):
     print("max_volume", max_volume)
     print("calculate_max_component time", time.time() - start_time)
     return max_volume
+
+
+def calculate_mean_vessel_length(image_3d, connectivity=3):
+    print("calculating mean vessel length")
+
+    start_time = time.time()
+    # 骨架化
+    skeleton = morphology.skeletonize_3d(image_3d)
+
+    # 计算骨架的体积（像素的数量）
+    skeleton_volume = np.sum(skeleton)
+
+    # 标记连通组件（每个连通组件代表一个血管）
+    labeled_skeleton, num_vessels = measure.label(skeleton, connectivity=connectivity, return_num=True)
+
+    # 计算平均血管长度
+    mean_vessel_length = skeleton_volume / num_vessels if num_vessels != 0 else 0
+
+    print("mean_vessel_length", mean_vessel_length)
+    print("calculate_mean_vessel_length time", time.time() - start_time)
+    return mean_vessel_length

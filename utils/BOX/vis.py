@@ -148,7 +148,7 @@ def vis_mha(path, epoch, image, logits, outputs, label=None, add_text='', rank=0
     out = sitk.GetImageFromArray(out.astype(numpy.float64))
     lb = sitk.GetImageFromArray(lb.astype(numpy.float64))
 
-    file_name = os.path.join(tb_dir, add_text + str(epoch + 1))
+    file_name = os.path.join(tb_dir, add_text + f"{epoch + 1:05}")
     # 文件夹名: y/m/d + epoch
     # 创建文件夹
     if not os.path.exists(file_name):
