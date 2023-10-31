@@ -82,6 +82,7 @@ def parser_cfg_loader(mode='train', path=""):
 
 class box:
     def __init__(self, mode='train', path=''):
+        self.vis_loader = None
         self.model_name = None
         self.threshold = None
         self.post_pred = None
@@ -212,7 +213,7 @@ class box:
         print("BOX load args: \n", json.dumps(vars(self.args), indent=4))
         return
 
-    def set_model_inferer(self, model, out_channels, inf_size=[96, 96, 96], threshold=0):
+    def set_model_inferer(self, model, out_channels, vis_loader, inf_size=[96, 96, 96], threshold=0):
         print("set model inferer")
         self.threshold = threshold
         self.post_label = AsDiscrete(to_onehot=out_channels, n_classes=out_channels)  # 将数据onehot 应该是
@@ -224,6 +225,36 @@ class box:
             predictor=model,
             overlap=self.args.infer_overlap,  # overlap是重叠的部分
         )
+        # 检查vis_loader长度是否为1
+        for i, _ in enumerate(vis_loader):
+            if i > 0:
+                raise ValueError("vis_loader length must be 1")
+        self.vis_loader = vis_loader
+        if self.vis_3d:
+            print("vis_3d is True, logging vis data image and label to mlflow")
+            # 保存vis_loader的第一个batch的image和label到mlflow
+            first_batch = None
+            try:
+                for i, adata in enumerate(data):
+                    first_batch = adata
+                    break
+                if first_batch is None:
+                    raise ValueError("first batch is None")
+            except:
+                first_batch = data
+            # 测试一次运行的
+            if isinstance(first_batch, list):
+                first_batch, target = first_batch
+            else:
+                first_batch, target = first_batch["image"], first_batch["label"]
+            img = first_batch[0].squeeze(0).cpu()
+            lb = target[0].squeeze(0).cpu()
+            img = sitk.GetImageFromArray(img.astype(np.float64))
+            lb = sitk.GetImageFromArray(lb.astype(np.float64))
+            file_name = self.vis_3d_cache_loc
+            sitk.WriteImage(img, file_name + "/image.mha")
+            sitk.WriteImage(lb, file_name + "/label.mha")
+            upload_cache(self.vis_3d_cache_loc, "vis_3d")
 
     # 内部函数 标准化标签
     def _normalize_tag(self, tag=None):
@@ -339,7 +370,8 @@ class box:
 
     # self.visualizes(loader, model)
 
-    def visualizes(self, model, loader):
+    def visualizes(self, model):
+        loader = self.vis_loader
 
         if self.log_frq is not None and self.use_vis:
             if (self.epoch + 1) % self.log_frq == 0:
@@ -351,14 +383,7 @@ class box:
                     utils.BOX.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, logits=logits, outputs=output,
                                          label=target,
                                          add_text=self.epoch_stage, rank=self.rank)
-                    # 检查缓存位置是否存在
-                    if not os.path.exists(self.vis_2d_cache_loc):
-                        raise ValueError("vis_2d_cache_loc not exists")
-                    # 找到缓存的文件，并且上传到mlflow上面
-                    for filename in os.listdir(self.vis_2d_cache_loc):
-                        filepath = os.path.join(self.vis_2d_cache_loc, filename)
-                        if os.path.isfile(filepath):
-                            mlflow.log_artifact(filepath, artifact_path="vis_2d")
+                    upload_cache(self.vis_2d_cache_loc, "vis_2d")
                     print('vis_2d complete')
 
                 if self.vis_2d_tb:
@@ -366,31 +391,14 @@ class box:
                                                      outputs=output,
                                                      label=target,
                                                      add_text=self.epoch_stage, rank=self.rank)
-                    # 检查缓存位置是否存在
-                    if not os.path.exists(self.vis_2d_cache_loc):
-                        raise ValueError("vis_2d_tb_cache_loc not exists")
-                    # 找到缓存的文件，并且上传到mlflow上面
-                    for filename in os.listdir(self.vis_2d_cache_loc):
-                        filepath = os.path.join(self.vis_2d_cache_loc, filename)
-                        if os.path.isfile(filepath):
-                            mlflow.log_artifact(filepath, artifact_path="vis_2d_tensorboard")
+                    upload_cache(self.vis_2d_tb_cache_loc, "vis_2d_tb")
                     print('vis_2d_tensorboard complete')
 
                 if self.vis_3d and self.vis_3d_frq is not None and (self.epoch + 1) % self.vis_3d_frq == 0:
                     utils.BOX.vis.vis_mha(self.vis_3d_cache_loc, self.epoch, image=data, logits=logits, outputs=output,
                                           label=target,
                                           add_text=self.epoch_stage, rank=self.rank)
-                    # 检查缓存位置是否存在
-                    if not os.path.exists(self.vis_3d_cache_loc):
-                        raise ValueError("vis_3d_cache_loc not exists")
-                    # 找到缓存的文件夹，并且上传到mlflow上面
-                    for filename in os.listdir(self.vis_3d_cache_loc):
-                        filepath = os.path.join(self.vis_3d_cache_loc, filename)  # 应该是一个文件夹
-                        # 检查是否是文件夹
-                        if os.path.isdir(filepath):
-                            mlflow.log_artifacts(filepath, artifact_path="vis_3d/" + filename)
-                        # if os.path.isfile(filepath):
-                        #     mlflow.log_artifacts(filepath, artifact_path="vis_3d/")
+                    upload_cache(self.vis_3d_cache_loc, "vis_3d")
                     print('vis_3d complete')
                 end_time = time.time()
                 print("vis using time: ", end_time - start_time)
@@ -607,6 +615,27 @@ class box:
         print("run {} finished".format(self.run.info.run_name))
         print("mlflow server: ", mlflow.get_tracking_uri())
         return mlflow.end_run()
+
+
+def upload_cache(cache_loc, artifact_path=None):
+    if artifact_path is None:
+        artifact_path = os.path.basename(cache_loc)  # 例:./runcache/vis_2d_200 -> vis_2d_200
+    # 检查缓存位置是否存在
+    if not os.path.exists(cache_loc):
+        raise ValueError("vis_3d_cache_loc not exists")
+    # 如果是文件
+    if os.path.isfile(cache_loc):
+        # 找到缓存的文件
+        for filename in os.listdir(cache_loc):
+            file_path = os.path.join(cache_loc, filename)
+            if os.path.isfile(file_path):
+                mlflow.log_artifact(file_path, artifact_path=artifact_path)
+    elif os.path.isdir(cache_loc):
+        for filename in os.listdir(cache_loc):
+            file_path = os.path.join(cache_loc, filename)
+            mlflow.log_artifacts(file_path, artifact_path=artifact_path)
+    else:
+        raise ValueError("vis_3d_cache_loc is not file or dir")
 
 
 def stop_all_runs():

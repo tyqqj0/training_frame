@@ -128,7 +128,7 @@ def vis_2d_tensorboard(path, epoch, image, logits, outputs, label=None, add_text
     writer.close()
 
 
-def vis_mha(path, epoch, image, logits, outputs, label=None, add_text='', rank=0):
+def vis_mha_3(path, epoch, image, logits, outputs, label=None, add_text='', rank=0):
     # 传入当前批次，参数，图像，输出，标签
     # 判断是否应该可视化
     # print("vis3d")
@@ -161,6 +161,36 @@ def vis_mha(path, epoch, image, logits, outputs, label=None, add_text='', rank=0
     sitk.WriteImage(img, file_name_img)
     sitk.WriteImage(out, file_name_out)
     sitk.WriteImage(lb, file_name_lb)
+
+
+def vis_mha(path, epoch, image, logits, outputs, label=None, add_text='', rank=0):
+    # 传入当前批次，参数，图像，输出，标签
+    # 判断是否应该可视化
+    # print("vis3d")
+
+    # 检查数据维度是否是3
+    if len(image.shape) != 3:
+        raise ValueError("image shape is not 3")
+    if len(logits.shape) != 3:
+        raise ValueError("logits shape is not 3")
+    if len(label.shape) != 3:
+        raise ValueError("label shape is not 3")
+    if len(outputs.shape) != 3:
+        raise ValueError("outputs shape is not 3")
+
+    tb_dir = os.path.join(path)
+    # img, out, lb = image, logits, label
+
+    # img = sitk.GetImageFromArray(img.astype(numpy.float64))
+    # out = sitk.GetImageFromArray(out.astype(numpy.float64))
+    # lb = sitk.GetImageFromArray(lb.astype(numpy.float64))
+    output = sitk.GetImageFromArray(outputs.astype(numpy.float64))
+    file_name = os.path.join(tb_dir, add_text + f"{epoch + 1:05}_output.mha")
+    # 文件夹名: y/m/d + epoch
+    # 创建文件夹
+
+
+    sitk.WriteImage(output, file_name)
 
 
 def vis_temp():

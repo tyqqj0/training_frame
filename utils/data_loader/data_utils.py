@@ -146,10 +146,10 @@ def get_loader(data_cfg=None, loader_cfg=None):
         raise ValueError("data_cfg must be a json file")
 
 
-def inside_get_loader(args, data_dir):
+def inside_get_loader(args, data_dir_json):
     # create a training data loader
     # data_dir = args.data_dir
-    datalist_json = data_dir
+    datalist_json = data_dir_json
     train_transform = transforms.Compose(  # 一系列的数据增强操作，compose是将多个操作组合起来
         [
             transforms.LoadImaged(keys=["image", "label"]),  # 读取图像和标签
@@ -251,8 +251,20 @@ def inside_get_loader(args, data_dir):
             pin_memory=True,
             persistent_workers=True,
         )
-        print(train_ds, val_ds)
-        loader = [train_loader, val_loader]
+        vis_files = load_decathlon_datalist(datalist_json, True, "vis", base_dir=data_dir)
+        vis_ds = data.Dataset(data=vis_files, transform=val_transform)
+        vis_sampler = Sampler(vis_ds, shuffle=False) if args.distributed else None
+        vis_loader = data.DataLoader(
+            vis_ds,
+            batch_size=1,
+            shuffle=False,
+            num_workers=args.workers,
+            sampler=vis_sampler,
+            pin_memory=True,
+            persistent_workers=True,
+        )
+        print(train_ds, val_ds, vis_ds)
+        loader = [train_loader, val_loader, vis_loader]
 
     return loader
 
