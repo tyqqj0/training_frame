@@ -48,6 +48,8 @@ class meshRenderer:
         # 如果path包括文件名，则去掉文件名
         if os.path.isfile(path):
             path = os.path.dirname(path)
+        if not os.path.exists(path):
+            os.mkdir(path)
         # 保存到png
         # 设置保存的文件路径
         if 'png' not in file_name:

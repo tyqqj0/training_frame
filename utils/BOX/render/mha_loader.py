@@ -25,12 +25,18 @@ class vtkReader:
 
         arr = itk.GetArrayViewFromImage(image)
 
+        # 取大于零的地方
+        # print('here')
+        # print(arr.shape)
+        arr = arr > 0
+        # print(arr.shape)
         # 获取原始形状并将其变形为一维的
         original_shape = arr.shape
         arr_flattened = arr.flatten().reshape(-1, 1)
-
+        # print('here')
         # 缩放数据到0-255
         scaler = MinMaxScaler(feature_range=(0, 255))
+
         arr_scaled = scaler.fit_transform(arr_flattened)
 
         # 将数据重新变形为原来的形状

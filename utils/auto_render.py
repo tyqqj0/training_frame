@@ -37,7 +37,7 @@ def generate_path(path, key=None):
             if key is None:
                 path_list.append(os.path.join(root, file))
             else:
-                if key in file:
+                if key in file and 'mha' in file:
                     path_list.append(os.path.join(root, file))
 
         for dir in dirs:
@@ -85,6 +85,7 @@ def get_artifact(exp_name, run_id=None):
     # 获取artifact的路径
     mlflow.start_run(run_id=run_id)
     artifact_uri = mlflow.get_artifact_uri()
+    run_name = mlflow.get_run(run_id).data.tags['mlflow.runName']
     mlflow.end_run()
     tracking_uri = '../mlartifacts'
     parsed_tracking_uri = urlparse(tracking_uri)
@@ -93,7 +94,7 @@ def get_artifact(exp_name, run_id=None):
     # 将 MLFLOW_TRACKING_URI 和 artifact_uri 拼接起来，以获取 artifact 的绝对路径
     local_path = parsed_tracking_uri.path.lstrip('/') + '/' + parsed_artifact_uri.path.lstrip('/')
     local_path = local_path.replace('/', '\\')
-    return local_path
+    return local_path, run_name
 
 
 def batch_render(path_list, loader, mesher, renderer, save_path=None):
@@ -106,7 +107,7 @@ def batch_render(path_list, loader, mesher, renderer, save_path=None):
     :return:
     '''
     for path in path_list:
-        print(path)
+        print('rendering ', os.path.basename(path))
         # 读取数据
         vtk_image, file_name = loader(path)
         # 生成网格
@@ -117,16 +118,16 @@ def batch_render(path_list, loader, mesher, renderer, save_path=None):
 
 if __name__ == '__main__':
     # 尝试从mlflow中获取路径
-    run_id = None
+    run_id = 'b0fa3574f13244ba8ad9fc433226aef9'
     path = None
     if path is None:
-        path = get_artifact('train', run_id) + "/vis_3d"
+        path, run_name = get_artifact('train', run_id)
     print(path)
     # 生成路径列表
-    path_list = generate_path(path, key='output')
+    path_list = generate_path(path + "/vis_3d", key='output')
     print(path_list)
     # 定义渲染工具
     loader = render.vtkReader()
     mesher = render.vtkMesher()
-    renderer = render.meshRenderer(opacity=0.85, save_path=path)
+    renderer = render.meshRenderer(opacity=0.85, save_path=path + '/' + run_name + '_3d')
     batch_render(path_list, loader, mesher, renderer)
