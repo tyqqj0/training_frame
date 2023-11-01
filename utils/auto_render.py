@@ -32,7 +32,7 @@ def generate_path(path, key=None):
     path_list = []
     # 遍历文件夹, walk返回三元组, root是当前目录, dirs是当前目录下的文件夹, files是当前目录下的文件
     for root, dirs, files in os.walk(path):
-        print(root, dirs, files)
+        # print(root, dirs, files)
         for file in files:
             if key is None:
                 path_list.append(os.path.join(root, file))
@@ -96,6 +96,24 @@ def get_artifact(exp_name, run_id=None):
     return local_path
 
 
+def batch_render(path_list, loader, mesher, renderer, save_path=None):
+    '''
+    批量渲染
+    :param path_list:
+    :param loader:
+    :param mesher:
+    :param renderer:
+    :return:
+    '''
+    for path in path_list:
+        # 读取数据
+        vtk_image, file_name = loader(path)
+        # 生成网格
+        mesh = mesher(vtk_image)
+        # 渲染
+        renderer.save(mesh, file_name, path=save_path)
+
+
 if __name__ == '__main__':
     # 尝试从mlflow中获取路径
     run_id = None
@@ -104,5 +122,9 @@ if __name__ == '__main__':
         path = get_artifact('train', run_id) + "/vis_3d"
     print(path)
     # 生成路径列表
-    path_list = generate_path(path, key='mha')
+    path_list = generate_path(path, key='label')
     print(path_list)
+    # 定义渲染工具
+    loader = render.vtkReader()
+    mesher = render.vtkMesher()
+    renderer = render.meshRenderer(opacity=0.85, save_path=path)
