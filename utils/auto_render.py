@@ -106,6 +106,7 @@ def batch_render(path_list, loader, mesher, renderer, save_path=None):
     :return:
     '''
     for path in path_list:
+        print(path)
         # 读取数据
         vtk_image, file_name = loader(path)
         # 生成网格
@@ -122,9 +123,10 @@ if __name__ == '__main__':
         path = get_artifact('train', run_id) + "/vis_3d"
     print(path)
     # 生成路径列表
-    path_list = generate_path(path, key='label')
+    path_list = generate_path(path, key='output')
     print(path_list)
     # 定义渲染工具
     loader = render.vtkReader()
     mesher = render.vtkMesher()
     renderer = render.meshRenderer(opacity=0.85, save_path=path)
+    batch_render(path_list, loader, mesher, renderer)
