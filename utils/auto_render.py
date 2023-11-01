@@ -88,6 +88,9 @@ def get_artifact(run_id=None):
 if __name__ == '__main__':
     # 尝试从mlflow中获取路径
     run_id = None
-
+    path = None
+    if path is None:
+        path = get_artifact(run_id)
+    print(path)
     # 生成路径列表
-    path_list = generate_path(r'./data', key='mha')
+    path_list = generate_path(path, key='mha')
