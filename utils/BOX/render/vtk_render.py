@@ -6,7 +6,6 @@ import vtk
 from vtk.util import numpy_support
 from vtk import vtkWindowToImageFilter, vtkPNGWriter
 
-
 __all__ = ["meshRenderer"]
 
 
@@ -47,7 +46,8 @@ class meshRenderer:
                 path = self.save_path
 
         # 如果path包括文件名，则去掉文件名
-        path = os.path.dirname(path)
+        if os.path.isfile(path):
+            path = os.path.dirname(path)
         # 保存到png
         # 设置保存的文件路径
         if 'png' not in file_name:
@@ -67,9 +67,6 @@ class meshRenderer:
 
         print(f"Image saved to {file_path}")
         return vtk_img
-
-
-
 
 
 def render_vtk_image(vtk_image, camera_position=(0, -10, 0), focal_point=(0, 0, 0), view_up=(0, 0, 1)):
