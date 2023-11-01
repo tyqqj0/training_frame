@@ -6,11 +6,12 @@
 # @Aim
 
 
-from.vtk_render import *
+from .vtk_render import *
+from .mha_loader import *
 
 # import argparse
 # import os
-# from functools import partial
+# from functools imp ort partial
 
 # from monai.losses import DiceCELoss, DiceLoss
 # from monai.metrics import DiceMetric

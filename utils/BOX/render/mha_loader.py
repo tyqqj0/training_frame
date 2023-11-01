@@ -2,9 +2,9 @@ import itk
 import vtk
 from vtk.util import numpy_support
 
-
 from sklearn.preprocessing import MinMaxScaler
 
+__all__ = ['vtkReader', 'vtkMesher', 'center_mesh']
 
 
 class vtkReader:
@@ -42,7 +42,6 @@ class vtkReader:
         return vtk_image, file_name
 
 
-
 class vtkMesher:
     def __init__(self, method='sinc', easy_factor=0.26, iterations=24, relaxation_factor=0.01,
                  feature_smoothing=False, boundary_smoothing=True, center=True):
@@ -58,7 +57,6 @@ class vtkMesher:
         return vtk_to_3dmesh(vtk_image, method=self.method, easy_factor=self.easy_factor, iterations=self.iterations,
                              relaxation_factor=self.relaxation_factor, feature_smoothing=self.feature_smoothing,
                              boundary_smoothing=self.boundary_smoothing, center=self.center)
-
 
 
 def smooth_mesh(mesh, iterations=15, relaxation_factor=0.01, feature_smoothing=False, boundary_smoothing=False):
@@ -123,7 +121,8 @@ def center_mesh(mesh):
     transformFilter.SetTransform(transform)
     transformFilter.Update()
     mesh = transformFilter.GetOutput()
-    return meshdef smooth_mesh(mesh, iterations=15, relaxation_factor=0.01, feature_smoothing=False, boundary_smoothing=False):
+    return meshdef
+    smooth_mesh(mesh, iterations=15, relaxation_factor=0.01, feature_smoothing=False, boundary_smoothing=False):
     print("smoothing")
     smoothFilter = vtk.vtkSmoothPolyDataFilter()
     smoothFilter.SetInputData(mesh)

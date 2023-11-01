@@ -7,6 +7,9 @@ from vtk.util import numpy_support
 from vtk import vtkWindowToImageFilter, vtkPNGWriter
 
 
+__all__ = ["meshRenderer"]
+
+
 class meshRenderer:
     def __init__(self, window_size=(1080, 1080), color=(1, 166 / 255, 0), camera_position=(0, 0, 200),
                  camera_focal_point=(0, 0, 0), opacity=1.0, save_path="./"):
