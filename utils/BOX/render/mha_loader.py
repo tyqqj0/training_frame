@@ -2,6 +2,8 @@ import itk
 import vtk
 from vtk.util import numpy_support
 
+import os
+
 from sklearn.preprocessing import MinMaxScaler
 
 __all__ = ['vtkReader', 'vtkMesher', 'center_mesh']
@@ -121,8 +123,10 @@ def center_mesh(mesh):
     transformFilter.SetTransform(transform)
     transformFilter.Update()
     mesh = transformFilter.GetOutput()
-    return meshdef
-    smooth_mesh(mesh, iterations=15, relaxation_factor=0.01, feature_smoothing=False, boundary_smoothing=False):
+    return mesh
+
+
+def smooth_mesh(mesh, iterations=15, relaxation_factor=0.01, feature_smoothing=False, boundary_smoothing=False):
     print("smoothing")
     smoothFilter = vtk.vtkSmoothPolyDataFilter()
     smoothFilter.SetInputData(mesh)

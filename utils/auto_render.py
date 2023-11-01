@@ -15,12 +15,12 @@ import os
 # import matplotlib.pyplot as plt
 # import pandas as pd
 # import torchvision
+from urllib.parse import urlparse
 
+os.environ['MLFLOW_TRACKING_URI'] = '../mlruns'
 
+import BOX.render as render
 
-
-
-from .BOX.render import
 
 def generate_path(path, key=None):
     '''
@@ -32,6 +32,7 @@ def generate_path(path, key=None):
     path_list = []
     # 遍历文件夹, walk返回三元组, root是当前目录, dirs是当前目录下的文件夹, files是当前目录下的文件
     for root, dirs, files in os.walk(path):
+        print(root, dirs, files)
         for file in files:
             if key is None:
                 path_list.append(os.path.join(root, file))
@@ -45,13 +46,14 @@ def generate_path(path, key=None):
     return path_list
 
 
-def get_artifact(run_id=None):
+def get_artifact(exp_name, run_id=None):
     '''
     从mlflow中获取artifact
     :param run_id:
     :param key:
     :return:
     '''
+    mlflow.set_experiment(exp_name)
     if run_id is None:
         # 尝试获取最后一个运行的id
         runs = mlflow.search_runs(order_by=["attribute.start_time DESC"], max_results=1)
@@ -84,7 +86,14 @@ def get_artifact(run_id=None):
     mlflow.start_run(run_id=run_id)
     artifact_uri = mlflow.get_artifact_uri()
     mlflow.end_run()
-    return artifact_uri
+    tracking_uri = '../mlartifacts'
+    parsed_tracking_uri = urlparse(tracking_uri)
+    parsed_artifact_uri = urlparse(artifact_uri)
+
+    # 将 MLFLOW_TRACKING_URI 和 artifact_uri 拼接起来，以获取 artifact 的绝对路径
+    local_path = parsed_tracking_uri.path.lstrip('/') + '/' + parsed_artifact_uri.path.lstrip('/')
+    local_path = local_path.replace('/', '\\')
+    return local_path
 
 
 if __name__ == '__main__':
@@ -92,7 +101,7 @@ if __name__ == '__main__':
     run_id = None
     path = None
     if path is None:
-        path = get_artifact(run_id)
+        path = get_artifact('train', run_id) + "/vis_3d"
     print(path)
     # 生成路径列表
     path_list = generate_path(path, key='mha')
