@@ -11,14 +11,16 @@ from torch.utils import data
 from torch import nn
 import mlflow
 
-# import os
+import os
 # import matplotlib.pyplot as plt
 # import pandas as pd
 # import torchvision
 
 
-from .BOX.render import render
 
+
+
+from .BOX.render import
 
 def generate_path(path, key=None):
     '''
@@ -70,11 +72,11 @@ def get_artifact(run_id=None):
         run_id = last_run_id
     else:
         # 检查run_id是否存在
-        run = mlflow.get_run(run_id=str(args.run_id))
+        run = mlflow.get_run(run_id=str(run_id))
         if run is None:
-            raise ValueError("run_id {} not exists".format(args.run_id))
+            raise ValueError("run_id {} not exists".format(run_id))
         # print(runs)
-        print("using run id: {}, name: {}".format(args.run_id, run.data.tags["mlflow.runName"]))
+        print("using run id: {}, name: {}".format(run_id, run.data.tags["mlflow.runName"]))
         # 默认使用最后一个运行的id
         run_id = run_id
 
@@ -94,3 +96,4 @@ if __name__ == '__main__':
     print(path)
     # 生成路径列表
     path_list = generate_path(path, key='mha')
+    print(path_list)
