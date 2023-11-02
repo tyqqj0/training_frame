@@ -1,0 +1,95 @@
+{
+  "name": "train",
+  "DEFAULT": {
+    "mode": {
+      "default": "train",
+      "type": "str",
+      "help": "running mode"
+    },
+    "amp": {
+      "default": true,
+      "type": null,
+      "help": "use amp for training",
+      "action": "store_true"
+    },
+    "is_continue": {
+      "default": false,
+      "type": null,
+      "help": "continue training",
+      "action": "store_true"
+    },
+    "exp_name": {
+      "default": "debug",
+      "type": "str",
+      "help": "experiment name, ***must be set***"
+    },
+    "run_id": {
+      "default": null,
+      "type": "str",
+      "help": "run id, ***must be set when test or is_continue, only for continue training***"
+    },
+    "infer_overlap": {
+      "help": "sliding window inference overlap",
+      "default": 0.5,
+      "type": "float"
+    },
+    "new_run_name": {
+      "default": null,
+      "type": "str",
+      "help": "new run name"
+    },
+    "log_dir": {
+      "default": "./runs",
+      "type": "str",
+      "help": "log dir"
+    },
+    "tag_id": {
+      "default": null,
+      "type": "str",
+      "help": "tag id, ***commanded to set***"
+    },
+    "val_frq": {
+      "default": 1,
+      "type": "int",
+      "help": "val frequency"
+    },
+    "save_frq": {
+      "default": 50,
+      "type": "int",
+      "help": "save frequency, disabled in test and val"
+    },
+    "user_name": {
+      "default": "tyqqj",
+      "type": "str",
+      "help": "user name"
+    },
+    "vis_2d": {
+      "default": true,
+      "type": null,
+      "help": "visualize 2d images",
+      "action": "store_true"
+    },
+    "log_frq": {
+      "default": 1,
+      "type": "int",
+      "help": "log frequency"
+    },
+    "vis_3d": {
+      "default": false,
+      "type": null,
+      "help": "visualize 3d images",
+      "action": "store_true"
+    },
+    "vis_3d_frq": {
+      "default": 250,
+      "type": "int",
+      "help": "visualize 3d images frequency"
+    },
+    "vis_2d_tb": {
+      "default": false,
+      "type": null,
+      "help": "visualize 2d tensorboard images",
+      "action": "store_true"
+    }
+  }
+}

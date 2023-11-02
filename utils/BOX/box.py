@@ -1,29 +1,29 @@
 # -*- CODING: UTF-8 -*-
 # @time 2023/9/26 23:06
 # @Author tyqqj
-# @File box.py
+# @File BOX.py
 # @
 # @Aim
 
 import os
-import re
 import shutil
 import time
+import json
+import argparse
 
 from mlflow import MlflowClient
-from mlflow.models import infer_signature
+from monai.transforms import AsDiscrete
 
-import utils.vis
-import utils.evl
+import utils.BOX.vis
+import utils.BOX.evl
+import utils.arg.parser
 
-import numpy as np
 import torch
 import mlflow
 import mlflow.pytorch
-from tensorboardX import SummaryWriter
 from monai import __version__
 
-from torch.cuda.amp import GradScaler, autocast
+from torch.cuda.amp import autocast
 from functools import partial
 from monai.inferers import sliding_window_inference
 
@@ -50,6 +50,22 @@ from monai.inferers import sliding_window_inference
 '''
 
 
+def parser_cfg_loader(mode='train', path=""):
+    if path != "":
+        mode = path
+    else:
+        mode = os.path.join(".\\utils\\BOX\\cfg", mode + ".json")
+    cfg = {}  # 默认的空配置
+    if os.path.exists(mode):
+        config_reader = utils.arg.parser.ConfigReader(mode)
+        cfg = config_reader.get_config()
+        arg_parser = utils.arg.parser.ArgParser(cfg)
+        args = arg_parser.parse_args()
+    else:
+        raise ValueError("mode {} not exists".format(mode))
+    return args
+
+
 # def save_checkpoint(net, optimizer, epoch, loss, metric):
 #     """
 #     两种保存方式，一种是直接保存模型，一种是保存参数
@@ -65,13 +81,20 @@ from monai.inferers import sliding_window_inference
 
 
 class box:
-    def __init__(self, args):
-
+    def __init__(self, mode='train', path=''):
+        self.vis_loader = None
+        self.model_name = None
+        self.threshold = None
+        self.post_pred = None
+        self.post_label = None
+        args = parser_cfg_loader(mode=mode, path=path)
         # stop_all_runs()
-
+        # return
+        self.mode = mode
         self.best_acc = -1
-        self.default_modelname = None
+        self.default_model_name = None
         self.run_id = None
+        # self.loader = None
         self.loader_len = None
         self.epoch = None
         self.use_vis = None
@@ -79,6 +102,8 @@ class box:
         self.epoch_stage = None
         self.evler = None
         self.args = args
+        # print(self.args)
+        # self.check_args()
         self.run = None
         self.artifact_location = None
         self.vis_3d = args.vis_3d
@@ -86,24 +111,24 @@ class box:
         self.vis_2d_tb = args.vis_2d_tb
         self.log_frq = args.log_frq
         self.save_frq = args.save_frq
+        self.vis_3d_frq = args.vis_3d_frq
         self.vis_2d_slice_loc = 96 / 2
         self.vis_2d_cache_loc = './run_cache/vis_2d'
         self.vis_2d_tb_cache_loc = './run_cache/vis_2d_tb'
         self.vis_3d_cache_loc = './run_cache/vis_3d'
-        self.vis_2d_cover = args.vis_2d_cover
-        self.vis_3d_cover = args.vis_3d_cover
         self.model_inferer = None
         self.signatures = None
         # self.epoch_start_time = {}
         self.timer = None
 
+        print_line('up')
+        print("Initializing BOX")
+
         # 实验模式检查
-        if args.train and args.test:
-            raise ValueError("Cannot set both train and test to True")
+        # if self.mode is None:
+        #     raise RuntimeError()
 
-        if args.is_continue and not args.train:
-            raise ValueError("Cannot set is_continue to True when train is False")
-
+        print('set mlflow')
         # mlflow 实验设定
         mlflow.set_tracking_uri("http://localhost:5000")
         # print()
@@ -147,7 +172,7 @@ class box:
                     # raise ValueError("Cannot set is_continue to True when name is None")
                     raise ValueError("Cannot find last run id")
                 args.run_id = last_run_id
-                self.args.run_id = last_run_id
+                # self.args.run_id = last_run_id
                 # 默认使用最后一个运行的id
                 self.run_id = last_run_id
             else:
@@ -159,9 +184,9 @@ class box:
                 print("using run id: {}, name: {}".format(args.run_id, run.data.tags["mlflow.runName"]))
                 # 默认使用最后一个运行的id
                 self.run_id = args.run_id
-                self.args.run_id = args.run_id
+                # self.args.run_id = args.run_id
 
-        if args.test and args.run_id is None:
+        if args.mode == "test" and args.run_id is None:
             # 询问是否使用最后一个运行的id
             swc = input("run_id is None, use last run id? (y/n)")
             if swc == "y":
@@ -181,41 +206,84 @@ class box:
 
         # 置入内部参数
         self.artifact_location = experiment.artifact_location
+        print('Initializing BOX complete')
+        print_line('down')
 
-    def set_model_inferer(self, model):
+    def check_args(self):
+        print("BOX load args: \n", json.dumps(vars(self.args), indent=4))
+        return
+
+    def set_model_inferer(self, model, out_channels, vis_loader, inf_size=[96, 96, 96], threshold=0):
         print("set model inferer")
-        inf_size = [self.args.roi_x, self.args.roi_y, self.args.roi_z]
+        self.threshold = threshold
+        self.post_label = AsDiscrete(to_onehot=out_channels, n_classes=out_channels)  # 将数据onehot 应该是
+        self.post_pred = AsDiscrete(argmax=True, to_onehot=out_channels, n_classes=out_channels)
         self.model_inferer = partial(
             sliding_window_inference,
             roi_size=inf_size,
-            sw_batch_size=self.args.sw_batch_size,
+            sw_batch_size=1,
             predictor=model,
-            overlap=self.args.infer_overlap,
+            overlap=self.args.infer_overlap,  # overlap是重叠的部分
         )
+        # 检查vis_loader长度是否为1
+        for i, _ in enumerate(vis_loader):
+            if i > 0:
+                raise ValueError("vis_loader length must be 1")
+        self.vis_loader = vis_loader
+        if self.vis_3d:
+            print("vis_3d is True, logging vis data image and label to mlflow")
+            # 保存vis_loader的第一个batch的image和label到mlflow
+            first_batch = None
+            try:
+                for i, adata in enumerate(data):
+                    first_batch = adata
+                    break
+                if first_batch is None:
+                    raise ValueError("first batch is None")
+            except:
+                first_batch = data
+            # 测试一次运行的
+            if isinstance(first_batch, list):
+                first_batch, target = first_batch
+            else:
+                first_batch, target = first_batch["image"], first_batch["label"]
+            img = first_batch[0].squeeze(0).cpu()
+            lb = target[0].squeeze(0).cpu()
+            img = sitk.GetImageFromArray(img.astype(np.float64))
+            lb = sitk.GetImageFromArray(lb.astype(np.float64))
+            file_name = self.vis_3d_cache_loc
+            sitk.WriteImage(img, file_name + "/image.mha")
+            sitk.WriteImage(lb, file_name + "/label.mha")
+            upload_cache(self.vis_3d_cache_loc, "vis_3d")
 
     # 内部函数 标准化标签
     def _normalize_tag(self, tag=None):
         mlflow.set_tag("mlflow.user", self.args.user_name)
-        mlflow.set_tag("mlflow.note.content", "test" if self.args.test else "train")
+        mlflow.set_tag("mlflow.note.content", self.args.mode)
         mlflow.set_tag("mlflow.note.run_id", self.args.run_id if self.args.run_id is not None else self.run.info.run_id)
         # mlflow 参数
         mlflow.log_param("monai_version", __version__)
+        # 设置网络名称
+        try:
+            mlflow.log_param("model_name", self.model_name)
+        except:
+            pass
         for k, v in vars(self.args).items():
             mlflow.log_param(k, v)
 
     def start_epoch(self, loader, stage, epoch, use_vis=None):
         # self.epoch_start_time = time.time()
-        if stage is 'train':
+        if stage == 'train':
             self.timer = epoch_timer()
             self.timer.start(epoch)
-        print("box start epoch: ", epoch)
+        print(f"BOX start {stage} epoch: ", epoch + 1)
         self.epoch = epoch
         self.epoch_stage = stage
         self.use_vis = use_vis
         if use_vis is None:
-            if self.args.test or (stage is 'val'):
+            if self.args.mode == 'test' or (stage == 'val'):
                 self.use_vis = True
-        self.evler = utils.evl.evl(loader, epoch)
+        self.evler = utils.BOX.evl.evl(loader, epoch)
         # 计算loader长度
         lenghtt = 0
         for i, _ in enumerate(loader):
@@ -249,14 +317,14 @@ class box:
     # self.log(stage, epoch, input, output, target, loss, metric, use_vis)
 
     def update_in_epoch(self, step, out, target, batch_size=-1, stage="train"):
-        # print("box updating")
+        # print("BOX updating")
         # 如果out是概率，我们需要转换成预测, 判断最小值是否为0
-        if out.min() < 0:
-            out = out < 0
+        # if out.min() < 0:
+        out = out > self.threshold
 
         # 如果当前阶段是训练（train）阶段，我们需要进行参数更新
         if stage == "train":
-            metrics_dict = self.evler.update(out, target, batch_size)  # 暂时
+            metrics_dict = self.evler.update(out, target, batch_size, stage)  # 暂时
             # 记录和上传参数
             for metric, value in metrics_dict.items():
                 # step = self.epoch + step * 1 / self.loader_len # 不能用浮点
@@ -287,102 +355,130 @@ class box:
         # 计算参数列表,获取参数
 
         print_line('up')
-        print("box end epoch, epoch: ", self.epoch + 1, " stage: ", self.epoch_stage)
+        print("BOX end epoch, epoch: ", self.epoch + 1, " stage: ", self.epoch_stage)
         metrics_dict = self.evler.end_epoch()
         print_line('down')
         for metric, value in metrics_dict.items():
             mlflow.log_metric(self.epoch_stage + '_' + metric, value, step=self.epoch + 1)
 
-        # self.visualizes(loader, model)
+    # TODO: box只有基础参数托管，通用性不强，需要改进
+    # def calculate_metrics(self, model, loader, epoch):
+    #     # 计算附加的指标指标
+    #     print_line('up')
+    #     print("BOX calculate metrics, epoch: ", epoch + 1)
+    #     print_line('down')
 
-    def visualizes(self, model, loader):
-        first_batch = None
-        for i, data in enumerate(loader):
-            first_batch = data
-            break
-        if first_batch is None:
-            raise ValueError("first batch is None")
+    # self.visualizes(loader, model)
+
+    def visualizes(self, model):
+        loader = self.vis_loader
+
         if self.log_frq is not None and self.use_vis:
             if (self.epoch + 1) % self.log_frq == 0:
                 # 显示
                 print("visualize epoch: ", self.epoch + 1)
                 start_time = time.time()
-                # 测试一次运行的
-                with torch.no_grad():
-                    if isinstance(first_batch, list):
-                        data, target = first_batch
-                    else:
-                        data, target = first_batch["image"], first_batch["label"]
-                    data, target = data.cuda(self.rank), target.cuda(self.rank)
-                    # print(data.shape)
-                    with autocast(enabled=self.args.amp):
-                        if self.model_inferer is not None and data.shape[-1] != 96:  # TODO: 这里是干啥的
-                            logits = self.model_inferer(data)
-                        else:
-                            if data.shape[-1] == 96:
-                                # logits = model(data)
-                                print("input not match and model_inferer is None, please set model_inferer")
-                            logits = model(data)
-                    # logits = model(data)
-
-                    # logits = model(data)
-                    if not logits.is_cuda:
-                        target = target.cpu()
-
-                    # if self.signatures is None:
-                    #     self.signatures = infer_signature(data, logits)
-                # 可视化
+                data, logits, output, target = self.predict_one_3d(loader, model, self.threshold)
                 if self.vis_2d:
-                    utils.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
-                                     add_text=self.epoch_stage, rank=self.rank)
-                    # 检查缓存位置是否存在
-                    if not os.path.exists(self.vis_2d_cache_loc):
-                        raise ValueError("vis_2d_cache_loc not exists")
-                    # 找到缓存的文件，并且上传到mlflow上面
-                    for filename in os.listdir(self.vis_2d_cache_loc):
-                        filepath = os.path.join(self.vis_2d_cache_loc, filename)
-                        if os.path.isfile(filepath):
-                            mlflow.log_artifact(filepath, artifact_path="vis_2d")
+                    utils.BOX.vis.vis_2d(self.vis_2d_cache_loc, self.epoch, image=data, logits=logits, outputs=output,
+                                         label=target,
+                                         add_text=self.epoch_stage, rank=self.rank)
+                    upload_cache(self.vis_2d_cache_loc, "vis_2d")
                     print('vis_2d complete')
 
                 if self.vis_2d_tb:
-                    utils.vis.vis_2d_tensorboard(self.vis_2d_tb_cache_loc, self.epoch, image=data, outputs=logits,
-                                                 label=target,
-                                                 add_text=self.epoch_stage, rank=self.rank)
-                    # 检查缓存位置是否存在
-                    if not os.path.exists(self.vis_2d_cache_loc):
-                        raise ValueError("vis_2d_tb_cache_loc not exists")
-                    # 找到缓存的文件，并且上传到mlflow上面
-                    for filename in os.listdir(self.vis_2d_cache_loc):
-                        filepath = os.path.join(self.vis_2d_cache_loc, filename)
-                        if os.path.isfile(filepath):
-                            mlflow.log_artifact(filepath, artifact_path="vis_2d_tensorboard")
+                    utils.BOX.vis.vis_2d_tensorboard(self.vis_2d_tb_cache_loc, self.epoch, image=data, logits=logits,
+                                                     outputs=output,
+                                                     label=target,
+                                                     add_text=self.epoch_stage, rank=self.rank)
+                    upload_cache(self.vis_2d_tb_cache_loc, "vis_2d_tb")
                     print('vis_2d_tensorboard complete')
 
-                if self.vis_3d:
-                    utils.vis.vis_mha(self.vis_3d_cache_loc, self.epoch, image=data, outputs=logits, label=target,
-                                      add_text=self.epoch_stage, rank=self.rank)
-                    # 检查缓存位置是否存在
-                    if not os.path.exists(self.vis_3d_cache_loc):
-                        raise ValueError("vis_3d_cache_loc not exists")
-                    # 找到缓存的文件夹，并且上传到mlflow上面
-                    for filename in os.listdir(self.vis_3d_cache_loc):
-                        filepath = os.path.join(self.vis_3d_cache_loc, filename)  # 应该是一个文件夹
-                        # 检查是否是文件夹
-                        if os.path.isdir(filepath):
-                            mlflow.log_artifacts(filepath, artifact_path="vis_3d/" + filename)
-                        # if os.path.isfile(filepath):
-                        #     mlflow.log_artifacts(filepath, artifact_path="vis_3d/")
+                if self.vis_3d and self.vis_3d_frq is not None and (self.epoch + 1) % self.vis_3d_frq == 0:
+                    utils.BOX.vis.vis_mha(self.vis_3d_cache_loc, self.epoch, image=data, logits=logits, outputs=output,
+                                          label=target,
+                                          add_text=self.epoch_stage, rank=self.rank)
+                    upload_cache(self.vis_3d_cache_loc, "vis_3d")
                     print('vis_3d complete')
                 end_time = time.time()
                 print("vis using time: ", end_time - start_time)
 
+    def predict_one_3d(self, data, model, threshold=0):
+        # 如果data是一整个loader, 找到第一个batch
+
+        first_batch = None
+        try:
+            for i, adata in enumerate(data):
+                first_batch = adata
+                break
+            if first_batch is None:
+                raise ValueError("first batch is None")
+        except:
+            first_batch = data
+        # 测试一次运行的
+        with torch.no_grad():
+            if isinstance(first_batch, list):
+                first_batch, target = first_batch
+            else:
+                first_batch, target = first_batch["image"], first_batch["label"]
+            first_batch, target = first_batch.cuda(self.rank), target.cuda(self.rank)
+            # print(first_batch.shape)
+            with autocast(enabled=True):  # TODO: 这里是干啥的
+                if self.model_inferer is not None and first_batch.shape[-1] != 96:
+                    logits = self.model_inferer(first_batch)
+                else:
+                    if first_batch.shape[-1] == 96:
+                        # logits = model(first_batch)
+                        print("input not match and model_inferer is None, please set model_inferer")
+                    logits = model(first_batch)
+            # logits = model(first_batch)
+
+            # logits = model(first_batch)
+            if not logits.is_cuda:
+                target = target.cpu()
+
+        data = first_batch.squeeze(0).cpu()
+        logits = logits.squeeze(0).cpu()
+        # output = self.post_pred(logits)
+        output = logits > threshold
+        target = self.post_label(target.squeeze(0))
+        if 0:
+            print("data shape:", data.shape)
+            print("logits shape:", logits.shape)
+            print("output shape:", output.shape)
+            print("target shape:", target.shape)
+
+        # 处理数据到三维张量
+        # (batch, channel, x, y, z) -> (x, y, z)
+        if len(logits.shape) == 4:  # 检查张量的维度是否为5
+            print("cutting 5d tensor")
+            # 如果输出是通道是二，保留第二个通道
+            if logits.shape[0] == 2:
+                logits = logits[1:2, :, :, :]
+            if output.shape[0] == 2:
+                output = output[1:2, :, :, :]
+            if target.shape[0] == 2:
+                target = target[1:2, :, :, :]
+            data = data.squeeze(0)
+            logits = logits.squeeze(0)
+            output = output.squeeze(0)
+            target = target.squeeze(0)
+
+        else:
+            raise ValueError("logits shape not match")
+
+        # if self.signatures is None:
+        #     self.signatures = infer_signature(first_batch, logits)
+        # 可视化
+
+        return data, logits, output, target
+
     def save_model(self, model, epoch, filename=None):
         speed = self.timer.end()
         mlflow.log_metric("epoch/h", speed, step=self.epoch)
-        print("box saving model")
+        print("BOX saving model")
         if filename is None:
-            filename = self.default_modelname
+            filename = self.default_model_name
 
         # 保存模型
         # 检查是否应保存模型
@@ -401,7 +497,7 @@ class box:
 
         # 检查是否应更新 best_acc 并保存最佳模型
         if accuracy > self.best_acc:
-            print("box saving best model")
+            print("BOX saving best model")
             self.best_acc = accuracy
             # # 删除旧的最佳模型
             # best_model_path = f"{self.artifact_location}/{filename}_best"
@@ -415,14 +511,17 @@ class box:
             mlflow.pytorch.log_model(model, filename + "-best", registered_model_name=filename + "_best",
                                      signature=self.signatures)
 
-    def load_model(self, model, load_run_id=None, model_version='latest', best_model=True, dict=True):
-
+    def load_model(self, model, set_model_name="unetr", load_run_id=None, dict=True, model_version='latest',
+                   best_model=True, load_model_name=None):
+        print(load_run_id)
+        self.model_name = set_model_name
         # 加载模型
         # 检查是否应加载模型
-        if not self.args.is_continue:
+        if not self.args.is_continue and (load_run_id is None or load_run_id is '') and (
+                load_model_name is None or load_model_name is ''):
             return model, 0, -1
         # 默认从继续运行的run_id中加载模型
-        if load_run_id is None:
+        if load_run_id is None or load_run_id is '':
             load_run_id = self.run_id
         if load_run_id is None:
             return
@@ -437,16 +536,21 @@ class box:
 
         # 使用运行的名称作为模型名称
         model_name = run.data.tags['mlflow.runName']
+        if load_model_name is not None and load_model_name is not '':
+            model_name = load_model_name
         if best_model:
             model_name += "_best"
 
+        # 检查模型名称
+        if set_model_name not in model_name:
+            raise ValueError("model_name {} not match set_model_name {}".format(model_name, set_model_name))
         # 从模型注册中心加载模型
         print("loading model")
         model_uri = f"models:/{model_name}/{model_version}"
         loaded_model = mlflow.pytorch.load_model(model_uri)
         print("model load complete")
 
-        if model_version is 'latest':
+        if model_version == 'latest':
             model_version = get_latest_model_version(model_name)
             # model_version = [model_version, "latest"]
 
@@ -462,6 +566,9 @@ class box:
 
         return model, int(epoch), accuracy
 
+    def get_frq(self):
+        return self.args.val_frq
+
     def __enter__(self):
         # global args
         # 出示服务器
@@ -469,8 +576,11 @@ class box:
 
         # 模拟参数
         run_name = None
+        model_name = self.model_name
+        if model_name is None:
+            model_name = ''
         if self.args.new_run_name is not None:
-            run_name = self.args.exp_name + '-' + self.args.new_run_name
+            run_name = self.args.exp_name + '-' + model_name + '-' + self.args.new_run_name
         # run_id是用来指定运行的，run_name是用来新建的，都可以没有但是功能不共用
         if self.run_id is not None:
             print("using run id: ", self.run_id)
@@ -493,8 +603,8 @@ class box:
         artifact_uri = mlflow.get_artifact_uri()
         print(f"Artifact URI: {artifact_uri}")
         # 将self.default_modelname设置为run_name
-        if self.default_modelname is None:
-            self.default_modelname = self.run.info.run_name
+        if self.default_model_name is None:
+            self.default_model_name = self.run.info.run_name
         return self.run
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -505,6 +615,27 @@ class box:
         print("run {} finished".format(self.run.info.run_name))
         print("mlflow server: ", mlflow.get_tracking_uri())
         return mlflow.end_run()
+
+
+def upload_cache(cache_loc, artifact_path=None):
+    if artifact_path is None:
+        artifact_path = os.path.basename(cache_loc)  # 例:./runcache/vis_2d_200 -> vis_2d_200
+    # 检查缓存位置是否存在
+    if not os.path.exists(cache_loc):
+        raise ValueError("vis_3d_cache_loc not exists")
+    # 如果是文件
+    if os.path.isfile(cache_loc):
+        # 找到缓存的文件
+        for filename in os.listdir(cache_loc):
+            file_path = os.path.join(cache_loc, filename)
+            if os.path.isfile(file_path):
+                mlflow.log_artifact(file_path, artifact_path=artifact_path)
+    elif os.path.isdir(cache_loc):
+        for filename in os.listdir(cache_loc):
+            file_path = os.path.join(cache_loc, filename)
+            mlflow.log_artifacts(file_path, artifact_path=artifact_path)
+    else:
+        raise ValueError("vis_3d_cache_loc is not file or dir")
 
 
 def stop_all_runs():
@@ -569,7 +700,7 @@ class epoch_timer:
 
     def start(self, epoch):
         print_line('up')
-        print("epoch {} start".format(epoch))
+        print("epoch {} start".format(epoch + 1))
         self.epoch = epoch
         self.start_time = time.time()
         print_line('down')
@@ -578,7 +709,7 @@ class epoch_timer:
         self.end_time = time.time()
         self.speed = 1 / (self.end_time - self.start_time) * 3600
         print_line('up')
-        print("epoch {} using time: ".format(self.epoch), self.end_time - self.start_time)
+        print("epoch {} using time: ".format(self.epoch + 1), self.end_time - self.start_time)
         print("speed: ", self.end_time - self.start_time, "s/epoch, ", 1 / ((self.end_time - self.start_time) / 3600),
               "epoch/hour")
         print_line('down')

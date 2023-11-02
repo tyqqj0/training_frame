@@ -8,9 +8,8 @@
 import numpy as np
 import torch
 from torch.utils import data
-from torch import nn
 
-import utils.train_metrics
+import utils.BOX.train_metrics
 
 
 # 指标列表的类，实现返回参数值与字典，输出的功能
@@ -49,18 +48,25 @@ class evl:
         self.image = len
         self.epoch = epoch
 
-    def update(self, out, target, batch_size=-1):
+    def update(self, out, target, batch_size=-1, stage=''):
         if batch_size == -1:
             batch_size = out.shape[0]
-        acc, sen, spe, iou, dsc, pre = utils.train_metrics.metrics3d(out, target, batch_size)
+        # 检查输入是否为概率
+        if out.shape[1] != 1:
+            try:
+                out = out[:, 1:2]
+            except:
+                print(out.shape)
+                raise ValueError("out shape is not logits")
+        acc, sen, spe, iou, dsc, pre = utils.BOX.train_metrics.metrics3d(out, target, batch_size)
         self.ACC.append(acc)
         self.SEN.append(sen)
         self.SPE.append(spe)
         self.IOU.append(iou)
         self.DSC.append(dsc)
         self.PRE.append(pre)
-        print("epoch:{0:d}\tacc:{1:.4f}\tsen:{2:.4f}\tspe:{3:.4f}\tiou:{4:.4f}\tdsc:{5:.4f}\tpre:{6:.4f}".format(
-            self.epoch + 1, acc, sen, spe, iou, dsc, pre))
+        print("{0} epoch:{1:d}\tacc:{2:.4f}\tsen:{3:.4f}\tspe:{4:.4f}\tiou:{5:.4f}\tdsc:{6:.4f}\tpre:{7:.4f}".format(
+            stage, self.epoch + 1, acc, sen, spe, iou, dsc, pre))
         return {"ACC": acc, "SEN": sen, "SPE": spe, "IOU": iou, "DSC": dsc, "PRE": pre}
 
     # print(

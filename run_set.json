@@ -1,0 +1,170 @@
+{
+  "name": "run_set",
+  "DEFAULT": {
+    "model_name": {
+      "help": "model name",
+      "default": "unetr",
+      "type": "str"
+    },
+    "load_run_id": {
+      "help": "run id to load",
+      "default": "",
+      "type": "str"
+    },
+    "load_model_name": {
+      "help": "model name to load",
+      "default": "",
+      "type": "str"
+    },
+    "threshold": {
+      "help": "argmax threshold",
+      "default": 0.5,
+      "type": "float"
+    },
+    "test_mode": {
+      "help": "test mode",
+      "default": false,
+      "type": null,
+      "action": "store_true"
+    },
+    "amt": {
+      "help": "data amount",
+      "default": -1,
+      "type": "int"
+    },
+    "max_epochs": {
+      "help": "max number of training epochs",
+      "default": 6000,
+      "type": "int"
+    },
+    "batch_size": {
+      "help": "number of batch size",
+      "default": 6,
+      "type": "int"
+    },
+    "sw_batch_size": {
+      "help": "number of sliding window batch size",
+      "default": 1,
+      "type": "int"
+    },
+    "optim_lr": {
+      "help": "optimization learning rate",
+      "default": 0.0001,
+      "type": "float"
+    },
+    "optim_name": {
+      "help": "optimization algorithm",
+      "default": "adamw",
+      "type": "str"
+    },
+    "reg_weight": {
+      "help": "regularization weight",
+      "default": 1e-05,
+      "type": "float"
+    },
+    "momentum": {
+      "help": "momentum",
+      "default": 0.99,
+      "type": "float"
+    },
+    "noamp": {
+      "help": "do NOT use amp for training",
+      "default": false,
+      "type": null,
+      "action": "store_true"
+    },
+    "val_every": {
+      "help": "validation frequency",
+      "default": 50,
+      "type": "int"
+    },
+    "distributed": {
+      "help": "start distributed training",
+      "default": false,
+      "type": null,
+      "action": "store_true"
+    },
+    "world_size": {
+      "help": "number of nodes for distributed training",
+      "default": 1,
+      "type": "int"
+    },
+    "rank": {
+      "help": "node rank for distributed training",
+      "default": 0,
+      "type": "int"
+    },
+    "dist_url": {
+      "help": "distributed url",
+      "default": "tcp://127.0.0.1:23456",
+      "type": "str"
+    },
+    "dist_backend": {
+      "help": "distributed backend",
+      "default": "nccl",
+      "type": "str"
+    },
+    "workers": {
+      "help": "number of workers",
+      "default": 1,
+      "type": "int"
+    },
+    "in_channels": {
+      "help": "number of input channels",
+      "default": 1,
+      "type": "int"
+    },
+    "out_channels": {
+      "help": "number of output channels",
+      "default": 2,
+      "type": "int"
+    },
+    "lrschedule": {
+      "help": "type of learning rate scheduler",
+      "default": "warmup_cosine",
+      "type": "str"
+    },
+    "warmup_epochs": {
+      "help": "number of warmup epochs",
+      "default": 50,
+      "type": "int"
+    },
+    "resume_ckpt": {
+      "help": "resume training from pretrained checkpoint",
+      "default": false,
+      "type": null,
+      "action": "store_true"
+    },
+    "resume_jit": {
+      "help": "resume training from pretrained torchscript checkpoint",
+      "default": false,
+      "type": null,
+      "action": "store_true"
+    },
+    "smooth_dr": {
+      "help": "constant added to dice denominator to avoid nan",
+      "default": 1e-06,
+      "type": "float"
+    },
+    "smooth_nr": {
+      "help": "constant added to dice numerator to avoid zero",
+      "default": 0.0,
+      "type": "float"
+    },
+    "roi_x": {
+      "help": "roi size in x direction",
+      "default": 96,
+      "type": "int"
+    },
+    "roi_y": {
+      "help": "roi size in y direction",
+      "default": 96,
+      "type": "int"
+    },
+    "roi_z": {
+      "help": "roi size in z direction",
+      "default": 96,
+      "type": "int"
+    }
+  }
+}

@@ -1,14 +1,8 @@
 import numpy as np
-import os
-import torch.nn as nn
-import torch
-from PIL import ImageOps, Image
-from sklearn.metrics import confusion_matrix
 
-from utils.evaluation_metrics3D import metrics_3d, Dice
+from utils.BOX.evaluation_metrics3D import metrics_3d
 
 from sklearn import metrics
-from skimage import filters
 
 
 def AUC_score(SR, GT, threshold=0.5):
@@ -103,7 +97,7 @@ def metrics3d(pred, label, batch_size):
         gt = label[i, :, :, :, :]
         # AUC = AUC_score(img/255, gt/255)
         # print(img.shape, gt.shape)
-        ACC, SEN, SPE, IOU, DSC, PRE = metrics_3d(img[0], gt[0])  # TODO: 这块可能有问题
+        ACC, SEN, SPE, IOU, DSC, PRE = metrics_3d(img[-1], gt[-1])  # TODO: 这块可能有问题
         # DCR = Dice(img, gt)
         # auc += AUC
         acc += ACC

@@ -12,9 +12,11 @@
 import math
 import os
 import re
+import json
 
 import numpy as np
 import torch
+import utils.arg.parser as psr
 
 # import monai
 
@@ -29,47 +31,47 @@ input_train = [
 ]
 
 
-def generate_list(data_root='D:Data/brains/train/', check=False, amt=-1):
-    # 读取data_root下的文件夹
-    addition_dir = ""
-    train_dirs = os.path.join(data_root, 'image', addition_dir)
-    label_dirs = os.path.join(data_root, 'label', addition_dir)
-
-    # 读取train_dirs下的文件
-    train_files = os.listdir(train_dirs)
-    label_files = os.listdir(label_dirs)
-
-    # Convert the list of filenames into a dictionary with extracted numbers as keys for faster lookup
-    label_files_dict = {re.findall(r'\d+', f)[0]: f for f in label_files}
-
-    # 生成一个空列表
-    input_train = []
-    # 遍历文件
-    for i, train_file in enumerate(train_files):
-        # Extract number from the train_file
-        number = re.findall(r'\d+', train_file)[0]
-
-        # Only add the file if a matching number exists in the label files
-        if number in label_files_dict:
-            # 生成一个空字典
-            input_dict = {}
-            # 生成文件的路径
-            train_path = os.path.join(train_dirs, train_file)
-            label_path = os.path.join(label_dirs, label_files_dict[number])
-            # 将路径添加到字典中
-            input_dict['image'] = train_path
-            input_dict['label'] = label_path
-            # 将字典添加到列表中
-            input_train.append(input_dict)
-
-        if i == (amt - 1):
-            break
-
-    if check:
-        # 如果check为True，那么就打印列表中的每个元素
-        for i in range(len(input_train)):
-            print(re.findall(r'\d+', input_train[i]['image'])[0], re.findall(r'\d+', input_train[i]['label'])[0])
-    return input_train
+# def generate_list(data_root='D:Data/brains/train/', check=False, amt=-1):
+#     # 读取data_root下的文件夹
+#     addition_dir = ""
+#     train_dirs = os.path.join(data_root, 'image', addition_dir)
+#     label_dirs = os.path.join(data_root, 'label', addition_dir)
+#
+#     # 读取train_dirs下的文件
+#     train_files = os.listdir(train_dirs)
+#     label_files = os.listdir(label_dirs)
+#
+#     # Convert the list of filenames into a dictionary with extracted numbers as keys for faster lookup
+#     label_files_dict = {re.findall(r'\d+', f)[0]: f for f in label_files}
+#
+#     # 生成一个空列表
+#     input_train = []
+#     # 遍历文件
+#     for i, train_file in enumerate(train_files):
+#         # Extract number from the train_file
+#         number = re.findall(r'\d+', train_file)[0]
+#
+#         # Only add the file if a matching number exists in the label files
+#         if number in label_files_dict:
+#             # 生成一个空字典
+#             input_dict = {}
+#             # 生成文件的路径
+#             train_path = os.path.join(train_dirs, train_file)
+#             label_path = os.path.join(label_dirs, label_files_dict[number])
+#             # 将路径添加到字典中
+#             input_dict['image'] = train_path
+#             input_dict['label'] = label_path
+#             # 将字典添加到列表中
+#             input_train.append(input_dict)
+#
+#         if i == (amt - 1):
+#             break
+#
+#     if check:
+#         # 如果check为True，那么就打印列表中的每个元素
+#         for i in range(len(input_train)):
+#             print(re.findall(r'\d+', input_train[i]['image'])[0], re.findall(r'\d+', input_train[i]['label'])[0])
+#     return input_train
 
 
 class Sampler(torch.utils.data.Sampler):
@@ -120,12 +122,34 @@ class Sampler(torch.utils.data.Sampler):
 
 
 # 读取数据
+def get_loader(data_cfg=None, loader_cfg=None):
+    if loader_cfg is None:
+        loader_cfg = "./utils/data_loader/loader.json"
+
+    # 导入读取的参数
+    config_reader = psr.ConfigReader(loader_cfg)
+    config = config_reader.get_config()
+    arg_parser = psr.ArgParser(config)
+    args = arg_parser.parse_args()
+    print(arg_parser)
+    # 获取数据集配置文件
+    # 如果不存在
+    if data_cfg is None:
+        try:
+            data_cfg = args.data_cfg # 读取loader默认数据集
+        except:
+            raise ValueError("can not find data_cfg")
+    # 如果是路径
+    if data_cfg.endswith('.json'):
+        return inside_get_loader(args, data_cfg)
+    else:
+        raise ValueError("data_cfg must be a json file")
 
 
-def get_loader(args):
+def inside_get_loader(args, data_dir_json):
     # create a training data loader
-    data_dir = args.data_dir
-    datalist_json = os.path.join(data_dir, args.json_list)
+    # data_dir = args.data_dir
+    datalist_json = data_dir_json
     train_transform = transforms.Compose(  # 一系列的数据增强操作，compose是将多个操作组合起来
         [
             transforms.LoadImaged(keys=["image", "label"]),  # 读取图像和标签
@@ -175,9 +199,9 @@ def get_loader(args):
 
     if args.test_mode:
         # 测试
-        # test_files = load_decathlon_datalist(datalist_json, True, "validation", base_dir=data_dir)  # 加载测试数据集
+        test_files = load_decathlon_datalist(datalist_json, True, "validation", base_dir=data_dir)  # 加载测试数据集
 
-        test_files = generate_list(args.test_data_dir)
+        # test_files = generate_list(args.test_data_dir)
         test_ds = data.Dataset(data=test_files, transform=val_transform)
         test_sampler = Sampler(test_ds, shuffle=False) if args.distributed else None
         test_loader = data.DataLoader(
@@ -193,8 +217,8 @@ def get_loader(args):
     else:
         # 如果不是测试，那么就是训练
         # 此处的datalist是一个列表，列表中的每个元素是一个字典，字典中包含了图像和标签的路径
-        # datalist = load_decathlon_datalist(datalist_json, True, "training", base_dir=data_dir)
-        datalist = generate_list(args.data_dir,check=True, amt=args.amt)
+        datalist = load_decathlon_datalist(datalist_json, True, "train", base_dir=data_dir)
+        # datalist = generate_list(args.data_dir, check=True, amt=args.amt)
         if args.use_normal_dataset:
             # 如果使用普通的数据集，那么就不需要缓存
             train_ds = data.Dataset(data=datalist, transform=train_transform)
@@ -214,8 +238,8 @@ def get_loader(args):
             pin_memory=True,
             persistent_workers=True,
         )
-        # val_files = load_decathlon_datalist(datalist_json, True, "validation", base_dir=data_dir)
-        val_files = generate_list(args.val_dir)
+        val_files = load_decathlon_datalist(datalist_json, True, "val", base_dir=data_dir)
+        # val_files = generate_list(args.val_dir)
         val_ds = data.Dataset(data=val_files, transform=val_transform)
         val_sampler = Sampler(val_ds, shuffle=False) if args.distributed else None
         val_loader = data.DataLoader(
@@ -227,8 +251,20 @@ def get_loader(args):
             pin_memory=True,
             persistent_workers=True,
         )
-        print(train_ds, val_ds)
-        loader = [train_loader, val_loader]
+        vis_files = load_decathlon_datalist(datalist_json, True, "vis", base_dir=data_dir)
+        vis_ds = data.Dataset(data=vis_files, transform=val_transform)
+        vis_sampler = Sampler(vis_ds, shuffle=False) if args.distributed else None
+        vis_loader = data.DataLoader(
+            vis_ds,
+            batch_size=1,
+            shuffle=False,
+            num_workers=args.workers,
+            sampler=vis_sampler,
+            pin_memory=True,
+            persistent_workers=True,
+        )
+        print(train_ds, val_ds, vis_ds)
+        loader = [train_loader, val_loader, vis_loader]
 
     return loader
 

@@ -10,23 +10,18 @@
 # limitations under the License.
 
 import os
-import shutil
 import time
 
 import numpy as np
 import torch
 import torch.nn.parallel
 import torch.utils.data.distributed
-from tensorboardX import SummaryWriter
 from torch.cuda.amp import GradScaler, autocast
 from utils.utils import distributed_all_gather
-from monai.visualize import blend_images, matshow3d, plot_2d_or_3d_image
-from torch.utils.tensorboard import SummaryWriter
-from monai.visualize import GradCAM
-from utils.utils import save_ckpt
-
-from utils.evl import evl
-import utils.vis as vis
+from skimage.measure import label, regionprops
+import mlflow
+import matplotlib.pyplot as plt
+from skimage import morphology, measure
 
 from monai.data import decollate_batch
 
@@ -72,8 +67,11 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=No
         for param in model.parameters():
             param.grad = None
         with autocast(enabled=args.amp):  #
+            # print(data.shape, target.shape)
             logits = model(data)
             # print(logits.shape, target.shape)
+            # print(target.min(), target.max())
+            # print(logits.min(), logits.max())
             loss = loss_func(logits, target)  # 这里出现报错了
         if args.amp:
             scaler.scale(loss).backward()
@@ -92,11 +90,11 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=No
         box.update_in_epoch(step=idx, out=logits, target=target, stage='train')
         # print(logits.shape, target.shape)
         # if not args.test:
-        #     box.vis(epoch, args, data, logits, target)
+        #     BOX.vis(epoch, args, data, logits, target)
         # see_loss.update(logits < 0, target)
         if args.rank == 0:
             print(
-                "Epoch {}/{} {}/{}".format(epoch, args.max_epochs, idx, len(loader)),
+                "Epoch {}/{} {}/{}".format(epoch + 1, args.max_epochs, idx + 1, len(loader)),
                 "loss: {:.4f}".format(run_loss.avg),
                 "time {:.2f}s".format(time.time() - start_time),
                 # "data: {}".format(data.shape)
@@ -131,8 +129,11 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
                     logits = model(data)
             if not logits.is_cuda:
                 target = target.cpu()
+            box.update_in_epoch(step=idx, out=logits, target=target, stage='val')
+            # print(logits.shape, target.shape)
             # see_loss.update(logits < 0, target)
             # print("data.shape", data.shape)
+            # print("logits.shape", logits.shape)
             # print("logits.shape", logits.shape)
             # print('here')
             val_labels_list = decollate_batch(target)
@@ -141,15 +142,14 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             # print('here')
             val_outputs_list = decollate_batch(logits)
             val_output_convert = [post_pred(val_pred_tensor) for val_pred_tensor in val_outputs_list]  # 将数据onehot 应该是
-
+            # print(val_labels_convert[0].shape, val_output_convert[0].shape)
             # if args.test:
             # 可视化
-            # box.vis(epoch, args, data, logits, target, add_text='val')
-            box.update_in_epoch(step=idx, out=logits, target=target, stage='val')
+            # BOX.vis(epoch, args, data, logits, target, add_text='val')
 
             acc = acc_func(y_pred=val_output_convert, y=val_labels_convert)
             acc = acc.cuda(args.rank)
-            print('here')
+            # print('here')
 
             if args.distributed:
                 acc_list = distributed_all_gather([acc], out_numpy=True, is_valid=idx < loader.sampler.valid_length)
@@ -162,7 +162,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             if args.rank == 0:
                 # see_loss.print_avr()
                 print(
-                    "Val {}/{} {}/{}".format(epoch, args.max_epochs, idx, len(loader)),
+                    "Val {}/{} {}/{}".format(epoch + 1, args.max_epochs, idx, len(loader)),
                     "acc",
                     avg_acc,
                     "time {:.2f}s".format(time.time() - start_time),
@@ -186,6 +186,34 @@ def save_checkpoint(model, epoch, args, filename="model.pt", best_acc=0, optimiz
     print("Saving checkpoint", filename)
 
 
+def additional_matrics(model_inferer, loader, epoch, threshold):
+    # 预测方法可以取
+    # 找到第一个batch
+    first_batch = []
+    for first_batch in loader:
+        break
+    if isinstance(first_batch, list):
+        data, target = first_batch
+    else:
+        data, target = first_batch["image"], first_batch["label"]
+    data, target = data.cuda(0), target.cuda(0)
+    with torch.no_grad():
+        logits = model_inferer(data)
+
+    # 如果输出是二维，取1, [batch_size, 2, 96, 96, 96]
+    if logits.shape[1] == 2:
+        logits = logits[:, 1]
+    if len(logits.shape) > 3:
+        logits = logits.squeeze(0)
+        logits = logits.squeeze(0)
+    # 不论logits是不是概率
+    logits = logits > threshold
+    max_volume = calculate_max_component(logits.cpu().numpy())
+    mlflow.log_metric("max_volume", max_volume, step=epoch)
+    mean_vessel_length = calculate_mean_vessel_length(logits.cpu().numpy())
+    mlflow.log_metric("mean_vessel_length", mean_vessel_length, step=epoch)
+
+
 def run_training(
         model,
         train_loader,
@@ -201,48 +229,28 @@ def run_training(
         post_pred=None,
         box=None,
 ):
-    # writer = None
-    # cam = GradCAM(nn_module=model, target_layers='out')
-    # if args.logdir is not None and args.rank == 0:
-    #     box.writer = SummaryWriter(log_dir=args.logdir)
-    #     if args.rank == 0:
-    #         print("Writing Tensorboard logs to ", args.logdir)
-    # scaler = None
     if args.amp:
         scaler = GradScaler()
     val_acc_max = 0.0
-    print(args.test)
-    if args.test:
-        max_epochs = 99999
-    else:
-        max_epochs = args.max_epochs
-    print("max_epoch", max_epochs)
+    # print(args.mode)
 
-    for epoch in range(start_epoch, max_epochs):
+    for epoch in range(start_epoch, args.max_epochs):
         if args.distributed:
             train_loader.sampler.set_epoch(epoch)
             torch.distributed.barrier()
-        print(args.rank, time.ctime(), "Epoch:", epoch)
+        print(args.rank, time.ctime(), "Epoch:", epoch + 1, "/", args.max_epochs)
         epoch_time = time.time()
-        # box
+        # BOX
 
         train_loss = train_epoch(
             model, train_loader, optimizer, scaler=scaler, epoch=epoch, loss_func=loss_func, args=args, box=box
         )
         if args.rank == 0:
             print(
-                "Final training  {}/{}".format(epoch, args.max_epochs - 1),
+                "Final training  {}/{}".format(epoch + 1, args.max_epochs - 1),
                 "loss: {:.4f}".format(train_loss),
                 "time {:.2f}s".format(time.time() - epoch_time),
             )
-        # if args.rank == 0 and box.writer is not None:
-        #     box.writer.add_scalar("train_loss", train_loss, epoch)
-        b_new_best = False
-
-        # if (epoch + 1) % args.vis_every == 0:
-        #     vis.vis(model, val_loader, args, epoch)
-        #     vis.vis_cam(cam, val_loader, args)
-
         if (epoch + 1) % args.val_every == 0:
             if args.distributed:
                 torch.distributed.barrier()
@@ -262,31 +270,14 @@ def run_training(
             )
             if args.rank == 0:
                 print(
-                    "Final validation  {}/{}".format(epoch, args.max_epochs - 1),
+                    "Final validation  {}/{}".format(epoch + 1, args.max_epochs - 1),
                     "acc",
                     val_avg_acc,
                     "time {:.2f}s".format(time.time() - epoch_time),
                 )
-                # if box.writer is not None:
-                #     box.writer.add_scalar("val_acc", val_avg_acc, epoch)
-
-            #     if val_avg_acc > val_acc_max:
-            #         print("new best ({:.6f} --> {:.6f}). ".format(val_acc_max, val_avg_acc))
-            #         val_acc_max = val_avg_acc
-            #         b_new_best = True
-            #         if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
-            #             # save_checkpoint(
-            #             #     model, epoch, args, best_acc=val_acc_max, optimizer=optimizer, scheduler=scheduler
-            #             # )
-            #             box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer)
-            #
-            # if args.rank == 0 and args.logdir is not None and args.save_checkpoint:
-            #     # save_checkpoint(model, epoch, args, best_acc=val_acc_max, filename="model_final.pt")
-            #     box.save_model(model, epoch, args, best_acc=val_acc_max, optimizer=optimizer,
-            #                    filename="model_final.pt")
-            # if b_new_best:
-            #     print("Copying to model.pt new best model!!!!")
-            #     shutil.copyfile(os.path.join(args.logdir, "model_final.pt"), os.path.join(args.logdir, "model.pt"))
+            if val_avg_acc > val_acc_max:
+                val_acc_max = val_avg_acc
+        additional_matrics(model_inferer, val_loader, epoch, args.threshold)  # TODO: 这个写的不好看
         box.visualizes(model, val_loader)
         box.save_model(model, epoch)
         if scheduler is not None:
@@ -295,3 +286,46 @@ def run_training(
     print("Training Finished !, Best Accuracy: ", val_acc_max)
 
     return val_acc_max
+
+
+def calculate_max_component(image_3d, connectivity=3):
+    print("calculating max component")
+    # plt.imshow(image_3d[64])
+    # plt.show()
+    # connectivity: 是指连通组件的连接方式，可以是1,2,3,4,6
+    # 使用 `label` 函数来找到并标记所有的连通组件
+    start_time = time.time()
+    labels_3d = label(image_3d, connectivity=connectivity)
+    # 使用 `regionprops` 来获取每个连通组件的属性
+    props_3d = regionprops(labels_3d)
+
+    # 找到最大的连通组件
+    max_volume = 0
+    for prop in props_3d:
+        if prop.area > max_volume:
+            max_volume = prop.area
+
+    print("max_volume", max_volume)
+    print("calculate_max_component time", time.time() - start_time)
+    return max_volume
+
+
+def calculate_mean_vessel_length(image_3d, connectivity=3):
+    print("calculating mean vessel length")
+
+    start_time = time.time()
+    # 骨架化
+    skeleton = morphology.skeletonize_3d(image_3d)
+
+    # 计算骨架的体积（像素的数量）
+    skeleton_volume = np.sum(skeleton)
+
+    # 标记连通组件（每个连通组件代表一个血管）
+    labeled_skeleton, num_vessels = measure.label(skeleton, connectivity=connectivity, return_num=True)
+
+    # 计算平均血管长度
+    mean_vessel_length = skeleton_volume / num_vessels if num_vessels != 0 else 0
+
+    print("mean_vessel_length", mean_vessel_length)
+    print("calculate_mean_vessel_length time", time.time() - start_time)
+    return mean_vessel_length

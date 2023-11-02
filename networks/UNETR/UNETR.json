@@ -1,0 +1,77 @@
+{
+  "name": "UNETR",
+  "DEFAULT": {
+    "roi_x": {
+      "help": "roi size in x direction",
+      "default": 96,
+      "type": "int"
+    },
+    "roi_y": {
+      "help": "roi size in y direction",
+      "default": 96,
+      "type": "int"
+    },
+    "roi_z": {
+      "help": "roi size in z direction",
+      "default": 96,
+      "type": "int"
+    },
+    "pos_embed": {
+      "help": "type of position embedding",
+      "default": "perceptron",
+      "type": "str"
+    },
+    "norm_name": {
+      "help": "normalization layer type in decoder",
+      "default": "instance",
+      "type": "str"
+    },
+    "num_heads": {
+      "help": "number of attention heads in ViT encoder",
+      "default": 12,
+      "type": "int"
+    },
+    "mlp_dim": {
+      "help": "mlp dimention in ViT encoder",
+      "default": 3072,
+      "type": "int"
+    },
+    "hidden_size": {
+      "help": "hidden size dimention in ViT encoder",
+      "default": 768,
+      "type": "int"
+    },
+    "feature_size": {
+      "help": "feature size dimention",
+      "default": 16,
+      "type": "int"
+    },
+    "in_channels": {
+      "help": "number of input channels",
+      "default": 1,
+      "type": "int"
+    },
+    "out_channels": {
+      "help": "number of output channels",
+      "default": 2,
+      "type": "int"
+    },
+    "res_block": {
+      "help": "use residual blocks",
+      "default": false,
+      "type": null,
+      "action": "store_true"
+    },
+    "conv_block": {
+      "help": "use conv blocks",
+      "default": false,
+      "type": null,
+      "action": "store_true"
+    },
+    "dropout_rate": {
+      "help": "dropout rate",
+      "default": 0.0,
+      "type": "float"
+    }
+  }
+}
