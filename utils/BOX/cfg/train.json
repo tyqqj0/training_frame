@@ -1,6 +1,11 @@
 {
   "name": "train",
   "DEFAULT": {
+    "log_url": {
+      "default": "http://localhost:5000",
+      "type": "str",
+      "help": "server url"
+    },
     "mode": {
       "default": "train",
       "type": "str",

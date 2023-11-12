@@ -19,7 +19,7 @@ from urllib.parse import urlparse
 
 os.environ['MLFLOW_TRACKING_URI'] = '../mlruns'
 
-import BOX.render as render
+import utils.BOX as box
 
 
 def generate_path(path, key=None):

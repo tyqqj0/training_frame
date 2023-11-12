@@ -6,5 +6,5 @@
 # @Aim 
 
 
-import parser
+from . import parser
 from .parser import get_args

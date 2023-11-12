@@ -13,6 +13,7 @@ import argparse
 
 from mlflow import MlflowClient
 from monai.transforms import AsDiscrete
+import numpy as np
 
 import utils.BOX.vis
 import utils.BOX.evl
@@ -26,6 +27,7 @@ from monai import __version__
 from torch.cuda.amp import autocast
 from functools import partial
 from monai.inferers import sliding_window_inference
+import SimpleITK as sitk
 
 # 用来规范化保存，日志，可视化等路径
 '''
@@ -130,7 +132,7 @@ class box:
 
         print('set mlflow')
         # mlflow 实验设定
-        mlflow.set_tracking_uri("http://localhost:5000")
+        mlflow.set_tracking_uri(args.log_url)
         # print()
         experiment = mlflow.get_experiment_by_name(args.exp_name)
         if experiment is None:
@@ -235,13 +237,13 @@ class box:
             # 保存vis_loader的第一个batch的image和label到mlflow
             first_batch = None
             try:
-                for i, adata in enumerate(data):
+                for i, adata in enumerate(self.vis_loader):
                     first_batch = adata
                     break
                 if first_batch is None:
                     raise ValueError("first batch is None")
             except:
-                first_batch = data
+                first_batch = adata
             # 测试一次运行的
             if isinstance(first_batch, list):
                 first_batch, target = first_batch

@@ -16,7 +16,7 @@ from networks.UNETR.unetr import UNETR
 from monai.networks.nets import UNet
 from optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from trainer import run_training
-from utils.data_loader.data_utils import get_loader
+from utils.data_loader.data_utils_old import get_loader
 from utils.BOX import box
 
 from monai.inferers import sliding_window_inference
