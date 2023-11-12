@@ -132,7 +132,7 @@ class box:
 
         print('set mlflow')
         # mlflow 实验设定
-        mlflow.set_tracking_uri(args.lo，g_url)
+        mlflow.set_tracking_uri(args.log_url)
 
         # print()
         experiment = mlflow.get_experiment_by_name(args.exp_name)
