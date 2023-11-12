@@ -133,6 +133,7 @@ class box:
         print('set mlflow')
         # mlflow 实验设定
         mlflow.set_tracking_uri(args.log_url)
+
         # print()
         experiment = mlflow.get_experiment_by_name(args.exp_name)
         if experiment is None:
@@ -151,6 +152,8 @@ class box:
         print("use experiment: ", args.exp_name)
         # print(experiment)
         print("experiment id: ", experiment.experiment_id)
+        # 设置工件位置
+        # mlflow.set_artifact_location(args.artifact_dir)
         print("artifact location: ", experiment.artifact_location)
 
         # 检查实验的状况
