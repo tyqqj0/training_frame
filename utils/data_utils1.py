@@ -14,7 +14,6 @@ import os
 
 import numpy as np
 import torch
-
 from monai import data, transforms
 from monai.data import load_decathlon_datalist
 

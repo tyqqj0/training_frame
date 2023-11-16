@@ -5,29 +5,26 @@
 # @
 # @Aim
 
+import json
 import os
 import shutil
 import time
-import json
-import argparse
+from functools import partial
 
-from mlflow import MlflowClient
-from monai.transforms import AsDiscrete
-import numpy as np
-
-import utils.BOX.vis
-import utils.BOX.evl
-import utils.arg.parser
-
-import torch
+import SimpleITK as sitk
 import mlflow
 import mlflow.pytorch
+import numpy as np
+import torch
+from mlflow import MlflowClient
 from monai import __version__
-
-from torch.cuda.amp import autocast
-from functools import partial
 from monai.inferers import sliding_window_inference
-import SimpleITK as sitk
+from monai.transforms import AsDiscrete
+from torch.cuda.amp import autocast
+
+import utils.BOX.evl
+import utils.BOX.vis
+import utils.arg.parser
 
 # 用来规范化保存，日志，可视化等路径
 '''

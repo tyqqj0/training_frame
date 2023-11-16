@@ -1,8 +1,7 @@
 import numpy as np
+from sklearn import metrics
 
 from utils.BOX.evaluation_metrics3D import metrics_3d
-
-from sklearn import metrics
 
 
 def AUC_score(SR, GT, threshold=0.5):

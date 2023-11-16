@@ -17,14 +17,9 @@
 # ╚═════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
 # @File   : evaluation_metrics3D.py
 import numpy as np
-import torch
-# import SimpleITK as sitk
-import glob
-import os
-from scipy.spatial import distance
-from sklearn.metrics import f1_score
-from sklearn import metrics
 from skimage import filters
+# import SimpleITK as sitk
+from sklearn import metrics
 
 
 def AUC_score(SR, GT, threshold=0.5):

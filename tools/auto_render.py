@@ -21,6 +21,7 @@ os.environ['MLFLOW_TRACKING_URI'] = '../mlruns'
 
 import utils.BOX as box
 
+import utils.BOX.render as render
 
 def generate_path(path, key=None):
     '''
@@ -128,6 +129,6 @@ if __name__ == '__main__':
     print(path_list)
     # 定义渲染工具
     loader = render.vtkReader()
-    mesher = render.vtkMesher()
+    mesher = render.npMesher()
     renderer = render.meshRenderer(opacity=0.85, save_path=path + '/' + run_name + '_3d')
     batch_render(path_list, loader, mesher, renderer)

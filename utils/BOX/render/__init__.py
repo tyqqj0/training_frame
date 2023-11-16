@@ -6,8 +6,9 @@
 # @Aim
 
 
-from .vtk_render import *
 from .mha_loader import *
+from .render import *
+from .vtk_render import *
 
 # import argparse
 # import os
@@ -34,15 +35,11 @@ from .mha_loader import *
 # import torchvision
 
 
-
 # from mayavi import mlab
 
 # # 假设 `voxels` 是你的体素数据
 # mlab.contour3d(voxels)
 # mlab.show()
-
-
-
 
 
 # camera_pos = [0, -1, 0]
@@ -67,16 +64,7 @@ from .mha_loader import *
 #     plt.show()
 
 
-
-
-
 # def read_mha_to_vtk(
-
-
-
-
-
-
 
 
 if 0:

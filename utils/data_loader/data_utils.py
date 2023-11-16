@@ -10,19 +10,16 @@
 # limitations under the License.
 
 import math
-import os
 
 import numpy as np
 import torch
+from monai import data
+from monai.data import load_decathlon_datalist
+
 import utils.arg.parser as psr
 from . import transformers
-from . import dataset as ds
-from . import data_loader
 
 # import monai
-
-from monai import data, transforms
-from monai.data import load_decathlon_datalist
 
 input_train = [
     {

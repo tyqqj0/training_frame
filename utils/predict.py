@@ -1,8 +1,9 @@
-import numpy as np
-import os
 import glob
-from tqdm import tqdm
+import os
+
 import SimpleITK as sitk
+import numpy as np
+from tqdm import tqdm
 
 os.environ['CUDA_VISIBLE_DEVICES'] = "0"
 

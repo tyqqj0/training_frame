@@ -4,17 +4,14 @@
 # @File vis.py
 # @
 # @Aim
-import numpy
-from monai.data import decollate_batch
-from monai.visualize import blend_images, matshow3d, plot_2d_or_3d_image
-from torch.utils.tensorboard import SummaryWriter
-import torch
 import os
-import SimpleITK as sitk
-from torchvision.utils import save_image
-import matplotlib.pyplot as plt
 
-from monai.visualize import GradCAM
+import SimpleITK as sitk
+import matplotlib.pyplot as plt
+import numpy
+import torch
+from monai.visualize import plot_2d_or_3d_image
+from torch.utils.tensorboard import SummaryWriter
 
 
 # tensorboard --logdir=./runs/test/vis
