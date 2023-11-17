@@ -310,7 +310,7 @@ def misguide_one_label(data, msg_arg=msg_arg_dice067, render=False, see_msk=Fals
 def add_misguide_to_dataset(input_folder, output_folder, msg_arg=msg_arg_dice067):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
-
+    losses = []
     for root, dirs, files in os.walk(input_folder):
         for file in files:
             if file.endswith('.mha'):
@@ -319,11 +319,13 @@ def add_misguide_to_dataset(input_folder, output_folder, msg_arg=msg_arg_dice067
 
                 # 转换为numpy数组，添加噪声，然后再转换回SimpleITK Image
 
-                img_noisy, loss = misguide_one_label(img, msg_arg=msg_msg, render=False, see_msk=False)
-
+                img_noisy, loss = misguide_one_label(img, msg_arg=msg_arg, render=False, see_msk=False)
+                print("file {} loss: {}".format(file, loss))
                 # 将噪声图像写入到输出文件夹
                 output_file_path = os.path.join(output_folder, file)
                 load_one_image.save_one_label(img_noisy, output_file_path)
+                losses.append(loss)
+    print("average loss:", np.mean(losses))
 
 
 if __name__ == "__main__":
