@@ -307,7 +307,7 @@ def misguide_one_label(data, msg_arg=msg_arg_dice067, render=False, see_msk=Fals
     return data_no2, loss
 
 
-def add_misguide_to_dataset(input_folder, output_folder, msg_arg=msg_arg_dice067):
+def add_misguide_to_dataset(input_folder, output_folder, msg_arg=msg_arg_dice067, render=False):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     losses = []
@@ -319,7 +319,7 @@ def add_misguide_to_dataset(input_folder, output_folder, msg_arg=msg_arg_dice067
 
                 # 转换为numpy数组，添加噪声，然后再转换回SimpleITK Image
 
-                img_noisy, loss = misguide_one_label(img, msg_arg=msg_arg, render=False, see_msk=False)
+                img_noisy, loss = misguide_one_label(img, msg_arg=msg_arg, render=render, see_msk=False)
                 print("file {} loss: {}".format(file, loss))
                 # 将噪声图像写入到输出文件夹
                 output_file_path = os.path.join(output_folder, file)
@@ -333,6 +333,6 @@ if __name__ == "__main__":
     # parser = argparse.ArgumentParser(description="monai training arguments")
     # 解析出输入参数
     # args = parser.parse_args()
-    input_path = "D:/Data/brains/train/label1"
-    output_path = "D:/Data/brains/train/label1_misguide"
-    add_misguide_to_dataset(input_path, output_path, msg_arg=msg_arg_dice067)
+    input_path = "D:/gkw/data/misguide_data/label"
+    output_path = "D:/gkw/data/misguide_data/label_dce067"
+    add_misguide_to_dataset(input_path, output_path, msg_arg=msg_arg_dice067, render=True)
