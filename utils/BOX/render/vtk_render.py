@@ -112,7 +112,7 @@ def vtk_to_3dmesh(vtk_image, method='sinc', easy_factor=0.26, iterations=24, rel
     # Set the threshold value to the middle of the scalar range
     threshold = (min_val + max_val) / 2
     threshold = 0.01
-    print("auto threshold", threshold)
+    # print("auto threshold", threshold)
     contourFilter.SetValue(0, threshold)
     contourFilter.Update()
 
@@ -184,16 +184,16 @@ class meshRenderer:
                                     opacity=opacity)
 
     def np(self, mesh, color=None, opacity=None, see_pos=False):
-        vtk_img = self(mesh, color=color, opacity=opacity)
+        vtk_img = self(mesh, color=color, opacity=opacity, see_pos=see_pos)
         plt_img = vtkTonp(vtk_img)
         return plt_img
 
     def show(self, mesh, color=None, opacity=None, see_pos=False):
-        vtk_img = self(mesh, color=None, opacity=None)
+        vtk_img = self(mesh, color=None, opacity=None, see_pos=see_pos)
         display_image(vtk_img)
 
     def save(self, mesh, file_name, path=None, color=None, opacity=None, see_pos=False):
-        vtk_img = self(mesh, color=None, opacity=None)
+        vtk_img = self(mesh, color=None, opacity=None, see_pos=see_pos)
         if path is None:
             if self.save_path is None:
                 raise ValueError("save path is None")

@@ -10,13 +10,13 @@ import json
 import os
 
 
-def get_a_set(data_dir="/path/to/my_dataset", path_ait=""):
+def get_a_set(data_dir):
     # global data_dir
     # 数据集的目录
 
     # 图像和标签的目录
-    images_dir = os.path.join(data_dir, "image" + path_ait)
-    labels_dir = os.path.join(data_dir, "label" + path_ait)
+    images_dir = os.path.join(data_dir["image"])
+    labels_dir = os.path.join(data_dir["label"])
     print(images_dir, labels_dir)
     # 获取所有图像和标签文件的路径
     image_files = sorted(os.listdir(images_dir))
@@ -33,17 +33,23 @@ def get_a_set(data_dir="/path/to/my_dataset", path_ait=""):
     return datalist
 
 
-def get_dsets(train_dir="", val_dir="", path_ait_train="", path_ait_val=""):
-    all_lists = {"training": get_a_set(train_dir, path_ait_train), "validation": get_a_set(val_dir, path_ait_val)}
+def get_dsets(train_dir, val_dir):
+    all_lists = {"training": get_a_set(train_dir), "validation": get_a_set(val_dir)}
     # all_lists = json.dumps(all_lists)
     print(json.dumps(all_lists, indent=4))
     return all_lists
 
 
 if __name__ == "__main__":
-    train_dir = "D:\\zhangchaoran\\miccai_achieve\\data\\train"
-    val_dir = "D:\\zhangchaoran\\miccai_achieve\\data\\test"
-    all_lists = get_dsets(train_dir, val_dir, "", "")
+    train_dir = {
+        "image": "D:\\gkw\\data\\misguide_data\\image",
+        "label": "D:\\gkw\\data\\misguide_data\\label_dce064"
+    }
+    val_dir = {
+        "image": "D:\\gkw\\data\\misguide_data\\image",
+        "label": "D:\\gkw\\data\\misguide_data\\label"
+    }
+    all_lists = get_dsets(train_dir, val_dir)
 
     # print(all_lists)
     with open("../data/vessel.json", "w") as dlj:
