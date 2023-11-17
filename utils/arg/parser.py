@@ -39,7 +39,7 @@ class ConfigReader:
             with open(config_file, 'r') as f:
                 self.config = json.load(f)
         else:
-            if input('配置文件不存在，是否创建？(y/n)') == 'y':
+            if input(f'配置文件{config_file}不存在，是否创建？(y/n)') == 'y':
                 print('创建默认配置文件')
                 self.create_default_config(namecf)
             else:

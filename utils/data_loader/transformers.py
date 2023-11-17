@@ -55,6 +55,7 @@ class BaseVesselTransforms(BaseTransforms):
         # 将目录和文件名拼接起来得到完整的文件路径
         cfg_file_path = os.path.join(current_dir, cfg_file)
         # 从logrbox中获取默认的参数
+        print("cfg_file_path:", cfg_file_path)
         self.args = get_args(cfg_file_path, check=check)
 
 
