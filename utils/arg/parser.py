@@ -41,7 +41,9 @@ class ConfigReader:
         else:
             if input('配置文件不存在，是否创建？(y/n)') == 'y':
                 print('创建默认配置文件')
-            self.create_default_config(namecf)
+                self.create_default_config(namecf)
+            else:
+                raise ValueError("需要配置文件", namecf, "请检查路径是否正确")
 
     def create_default_config(self, namecf='None'):
         """Creates a default configuration file if none exists."""

@@ -34,7 +34,7 @@ def get_a_set(data_dir):
 
 
 def get_dsets(train_dir, val_dir):
-    all_lists = {"training": get_a_set(train_dir), "validation": get_a_set(val_dir)}
+    all_lists = {"train": get_a_set(train_dir), "val": get_a_set(val_dir)}
     # all_lists = json.dumps(all_lists)
     print(json.dumps(all_lists, indent=4))
     return all_lists
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     all_lists = get_dsets(train_dir, val_dir)
 
     # print(all_lists)
-    with open("../data/vessel.json", "w") as dlj:
+    with open("../data/msg_064.json", "w") as dlj:
         json.dump(all_lists, dlj, indent=4)
 
 # get_a_set()

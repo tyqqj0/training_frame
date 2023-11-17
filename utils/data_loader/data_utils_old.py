@@ -29,8 +29,6 @@ input_train = [
 ]
 
 
-
-
 class Sampler(torch.utils.data.Sampler):
     def __init__(self, dataset, num_replicas=None, rank=None, shuffle=True, make_even=True):
         if num_replicas is None:
@@ -93,7 +91,7 @@ def get_loader(data_cfg=None, loader_cfg=None):
     # 如果不存在
     if data_cfg is None:
         try:
-            data_cfg = args.data_cfg # 读取loader默认数据集
+            data_cfg = args.data_cfg  # 读取loader默认数据集
         except:
             raise ValueError("can not find data_cfg")
     # 如果是路径
@@ -164,7 +162,7 @@ def inside_get_loader(args, data_dir_json):
             pin_memory=True,
             persistent_workers=True,
         )
-        vis_files = load_decathlon_datalist(datalist_json, True, "vis", base_dir=data_dir)
+        vis_files = load_decathlon_datalist(datalist_json, True, "vis")
         vis_ds = data.Dataset(data=vis_files, transform=val_transform)
         vis_sampler = Sampler(vis_ds, shuffle=False) if args.distributed else None
         vis_loader = data.DataLoader(

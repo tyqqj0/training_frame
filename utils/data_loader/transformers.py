@@ -3,9 +3,8 @@
 # @Author tyqqj
 # @File transformers.py
 # @
-# @Aim 
-
-
+# @Aim
+import os
 from typing import List
 
 from monai import transforms
@@ -49,8 +48,14 @@ class BaseVesselTransforms(BaseTransforms):
         # 如果调用该基类，才会check参数
         check = True if self.__class__.__name__ == 'BaseVesselTransforms' else False
         self.keys = keys
+        # 获取当前文件的绝对路径
+        current_path = os.path.abspath(__file__)
+        # 获取当前文件的目录
+        current_dir = os.path.dirname(current_path)
+        # 将目录和文件名拼接起来得到完整的文件路径
+        cfg_file_path = os.path.join(current_dir, cfg_file)
         # 从logrbox中获取默认的参数
-        self.args = get_args(cfg_file, check=check)
+        self.args = get_args(cfg_file_path, check=check)
 
 
 class vessel_train_transforms(BaseVesselTransforms):

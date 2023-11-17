@@ -3,7 +3,7 @@
   "DEFAULT": {
     "model_name": {
       "help": "model name",
-      "default": "unetr",
+      "default": "unet",
       "type": "str"
     },
     "load_run_id": {
