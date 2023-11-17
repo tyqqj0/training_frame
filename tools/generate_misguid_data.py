@@ -3,7 +3,8 @@
 # @Author tyqqj
 # @File generate_misguid_data.py
 # @
-# @Aim 
+# @Aim
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -41,6 +42,8 @@ import utils.data_loader.load_one_image as load_one_image
 
 
 msg_arg_dice067 = {
+    "discribtion": "模拟真实数据"
+    ,
     "mask_generator_1": {
         "blur_size": 1,
         "threshold": 0.45
@@ -52,6 +55,36 @@ msg_arg_dice067 = {
     "mask_generator_2": {
         "blur_size": 6,
         "threshold": 0.54
+    }
+}
+msg_arg_dice064 = {
+    "discribtion": "模拟后误导数据",
+    "mask_generator_1": {
+        "blur_size": 1,
+        "threshold": 0.45
+    },
+    "structures": {
+        "erosion": np.ones((2, 2, 2)),
+        "dilation": np.ones((3, 3, 3))
+    },
+    "mask_generator_2": {
+        "blur_size": 6,
+        "threshold": 0.5
+    }
+}
+msg_arg_dice_056 = {
+    "discribtion": "模拟全误导数据",
+    "mask_generator_1": {
+        "blur_size": 1,
+        "threshold": 0.35
+    },
+    "structures": {
+        "erosion": np.ones((2, 2, 2)),
+        "dilation": np.ones((4, 4, 4))
+    },
+    "mask_generator_2": {
+        "blur_size": 6,
+        "threshold": 0.65
     }
 }
 
@@ -252,22 +285,45 @@ class dice(DiceLoss):
         return super().forward(input, target)
 
 
-def misguid_one_label(msg_arg=msg_arg_dice067):
+def misguide_one_label(data, msg_arg=msg_arg_dice067, render=False, see_msk=False):
     masktt = Random3DMask(data.shape, **msg_arg['mask_generator_1'])
-    # masktt.show()
-    # structures = {'erosion': np.ones((2, 2, 2)), 'dilation': np.ones((3, 3, 3))}
     # structures = {'erosion': generate_binary_structure(3, 0), 'dilation': generate_binary_structure(3, 2)}
     dls_a = RandomErosionDilation3D(masktt, structures=msg_arg['structures'])
+
     masktt2 = Random3DMask(data.shape, **msg_arg['mask_generator_2'])
-    # masktt2.show()
     dls_b = RandomDelete3D(masktt2)
+    if see_msk:
+        masktt.show()
+        masktt2.show()
     data_no = dls_a(data)
     data_no2 = dls_b(data_no)
-    loss = ''
+
+    # loss = ''
     loss_func = dice()
     loss = loss_func(data, data_no2)
-    print("loss:", loss)
-    simple_render(data_no2, tex=f"dice: {1 - loss:.4f}")
+    if render:
+        print("loss:", loss)
+        simple_render(data_no2, tex=f"dice: {1 - loss:.4f}")
+    return data_no2, loss
+
+
+def add_misguide_to_dataset(input_folder, output_folder, msg_arg=msg_arg_dice067):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    for root, dirs, files in os.walk(input_folder):
+        for file in files:
+            if file.endswith('.mha'):
+                file_path = os.path.join(root, file)
+                img = load_one_image.load_one_label(file_path)
+
+                # 转换为numpy数组，添加噪声，然后再转换回SimpleITK Image
+
+                img_noisy, loss = misguide_one_label(img, msg_arg=msg_msg, render=False, see_msk=False)
+
+                # 将噪声图像写入到输出文件夹
+                output_file_path = os.path.join(output_folder, file)
+                load_one_image.save_one_label(img_noisy, output_file_path)
 
 
 if __name__ == "__main__":
@@ -275,10 +331,6 @@ if __name__ == "__main__":
     # parser = argparse.ArgumentParser(description="monai training arguments")
     # 解析出输入参数
     # args = parser.parse_args()
-    data = load_one_image.one_label(threshold=True)
-    misguid_one_label()
-    # simple_see_slice(data_no)
-
-    # 扩展通道数量
-
-    # print(data.dtype, data_no.dtype)
+    input_path = "D:/Data/brains/train/label1"
+    output_path = "D:/Data/brains/train/label1_misguide"
+    add_misguide_to_dataset(input_path, output_path, msg_arg=msg_arg_dice067)

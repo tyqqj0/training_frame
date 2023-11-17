@@ -9,7 +9,7 @@ import itk
 import numpy as np
 
 
-def one_label(path='D:/Data/brains/train/label1/Normal002.mha', threshold=False):
+def load_one_label(path='D:/Data/brains/train/label1/Normal002.mha', threshold=False):
     img = itk.imread(path)
     # 转换成numpy数组
     arr = itk.GetArrayViewFromImage(img)
@@ -25,3 +25,10 @@ def one_label(path='D:/Data/brains/train/label1/Normal002.mha', threshold=False)
     # arr = np.transpose(arr, (1, 2, 0)) # 因为itk读取顺序是z,x,y
     # print("img shape, min, max:", arr.shape, arr.min(), arr.max())
     return arr
+
+
+def save_one_label(arr, path='D:/Data/brains/train/label1/Normal002.mha'):
+    # 转换成itk数组
+    img = itk.GetImageViewFromArray(arr)
+    # 保存
+    itk.imwrite(img, path)
