@@ -119,6 +119,7 @@ class box:
         self.signatures = None
         # self.epoch_start_time = {}
         self.timer = None
+        self.got_vis_image = False
 
         print_line('up')
         print("Initializing BOX")
@@ -232,6 +233,11 @@ class box:
             if i > 0:
                 raise ValueError("vis_loader length must be 1")
         self.vis_loader = vis_loader
+        # self.save_vis_image()
+        print("inferer set complete")
+        self.check_active_run()
+
+    def save_vis_image(self):
         if self.vis_3d:
             print("vis_3d is True, logging vis data image and label to mlflow")
             # 保存vis_loader的第一个batch的image和label到mlflow
@@ -257,9 +263,8 @@ class box:
             sitk.WriteImage(img, file_name + "/image.mha")
             sitk.WriteImage(lb, file_name + "/label.mha")
             upload_cache(self.vis_3d_cache_loc, "vis_3d")
-        print("inferer set complete")
-        self.check_active_run()
-
+            print("vis_3d image and label save complete")
+        self.got_vis_image = True
 
     def check_active_run(self):
         activate_run = mlflow.active_run()
@@ -382,7 +387,8 @@ class box:
 
     def visualizes(self, model):
         loader = self.vis_loader
-
+        if self.got_vis_image is False:
+            self.save_vis_image()
         if self.log_frq is not None and self.use_vis:
             if (self.epoch + 1) % self.log_frq == 0:
                 # 显示
@@ -523,7 +529,7 @@ class box:
 
     def load_model(self, model, set_model_name="unetr", load_run_id=None, dict=True, model_version='latest',
                    best_model=True, load_model_name=None):
-        print(load_run_id)
+        print("loading model from :", load_run_id if load_run_id is not None else "None")
         self.model_name = set_model_name
         # 加载模型
         # 检查是否应加载模型
@@ -574,6 +580,8 @@ class box:
         else:
             model = loaded_model
         self.check_active_run()
+        # 将self的是否有可视化的图像标志设为真
+        self.got_vis_image = True
         return model, int(epoch), accuracy
 
     def get_frq(self):
