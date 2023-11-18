@@ -69,7 +69,7 @@ def main_worker(args, logrbox):
         args.threshold = 0
     else:
         raise ValueError("Unsupported out_channels now" + str(args.out_channels))
-
+    logrbox.check_active_run()
     # 获取数据读取器
     # TODO: 重写数据读取器
     loader = get_loader()  # 可以指定数据配置
@@ -83,6 +83,7 @@ def main_worker(args, logrbox):
         to_onehot_y=args.out_channels, softmax=True, squared_pred=True, smooth_nr=args.smooth_nr,
         smooth_dr=args.smooth_dr
     )
+    logrbox.check_active_run()
     logrbox.set_model_inferer(model, args.out_channels, loader[2], inf_size, args.threshold)
     logrbox.check_active_run()
     # 设置小工具

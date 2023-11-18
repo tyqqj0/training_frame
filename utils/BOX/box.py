@@ -56,6 +56,7 @@ def parser_cfg_loader(mode='train', path=""):
         mode = os.path.join(".\\utils\\BOX\\cfg", mode + ".json")
     cfg = {}  # 默认的空配置
     if os.path.exists(mode):
+        print("loading config ", mode)
         config_reader = utils.arg.parser.ConfigReader(mode)
         cfg = config_reader.get_config()
         arg_parser = utils.arg.parser.ArgParser(cfg)
@@ -268,8 +269,9 @@ class box:
 
     def check_active_run(self):
         activate_run = mlflow.active_run()
-        print("There is a activate run:", activate_run)
-        raise RuntimeError("check here")
+        if activate_run is not None:
+            print("There is a activate run:", activate_run)
+            raise RuntimeError("check here")
 
     # 内部函数 标准化标签
     def _normalize_tag(self, tag=None):

@@ -278,7 +278,7 @@ def run_training(
             if val_avg_acc > val_acc_max:
                 val_acc_max = val_avg_acc
         additional_matrics(model_inferer, val_loader, epoch, args.threshold)  # TODO: 这个写的不好看
-        box.visualizes(model, val_loader)
+        box.visualizes(model)
         box.save_model(model, epoch)
         if scheduler is not None:
             scheduler.step()
