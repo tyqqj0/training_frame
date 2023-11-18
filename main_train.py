@@ -83,7 +83,8 @@ def main_worker(args, logrbox):
         to_onehot_y=args.out_channels, softmax=True, squared_pred=True, smooth_nr=args.smooth_nr,
         smooth_dr=args.smooth_dr
     )
-    logrbox.set_model_inferer(model, args.out_channels, loader[2], inf_size, args.threshold, )
+    logrbox.set_model_inferer(model, args.out_channels, loader[2], inf_size, args.threshold)
+    logrbox.check_active_run()
     # 设置小工具
     post_label = AsDiscrete(to_onehot=args.out_channels, n_classes=args.out_channels)  # 将数据onehot 应该是
     post_pred = AsDiscrete(argmax=True, to_onehot=args.out_channels, n_classes=args.out_channels)

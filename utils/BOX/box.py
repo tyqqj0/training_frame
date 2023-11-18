@@ -258,6 +258,13 @@ class box:
             sitk.WriteImage(lb, file_name + "/label.mha")
             upload_cache(self.vis_3d_cache_loc, "vis_3d")
         print("inferer set complete")
+        self.check_active_run()
+
+
+    def check_active_run(self):
+        activate_run = mlflow.active_run()
+        print("There is a activate run:", activate_run)
+        raise RuntimeError("check here")
 
     # 内部函数 标准化标签
     def _normalize_tag(self, tag=None):
@@ -566,7 +573,7 @@ class box:
             model.load_state_dict(loaded_model.state_dict())
         else:
             model = loaded_model
-
+        self.check_active_run()
         return model, int(epoch), accuracy
 
     def get_frq(self):
@@ -576,7 +583,7 @@ class box:
         # global args
         # 出示服务器
         print("mlflow server: ", mlflow.get_tracking_uri())
-
+        self.check_active_run()
         # 模拟参数
         run_name = None
         model_name = self.model_name
