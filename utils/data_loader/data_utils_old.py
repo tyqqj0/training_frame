@@ -124,7 +124,7 @@ class Sampler(torch.utils.data.Sampler):
 # 读取数据
 def get_loader(data_cfg=None, loader_cfg=None):
     if loader_cfg is None:
-        loader_cfg = "./utils/data_loader/loader.json"
+        loader_cfg = "./utils/data_loader/loader_old.json"
 
     # 导入读取的参数
     config_reader = psr.ConfigReader(loader_cfg)

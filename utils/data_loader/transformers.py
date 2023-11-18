@@ -60,7 +60,7 @@ class BaseVesselTransforms(BaseTransforms):
 
 
 class vessel_train_transforms(BaseVesselTransforms):
-    def __init__(self, crop_size=None, cfg_file='./transforms_default.json', keys: List[str] = ['image', 'label'],
+    def __init__(self, crop_size=None, cfg_file='transforms_default.json', keys: List[str] = ['image', 'label'],
                  check: bool = False):
         super().__init__(cfg_file, keys, check)
         # self.args = get_args(cfg_file, check=False)
@@ -121,7 +121,7 @@ class vessel_train_transforms(BaseVesselTransforms):
 
 
 class vessel_val_transforms(BaseVesselTransforms):
-    def __init__(self, cfg_file='./transforms_default.json', keys: List[str] = ['image', 'label'], check: bool = False):
+    def __init__(self, cfg_file='transforms_default.json', keys: List[str] = ['image', 'label'], check: bool = False):
         super().__init__(cfg_file, keys, check)
         self.args = get_args(cfg_file, check=False)
         self.space_x = self.args.space_x

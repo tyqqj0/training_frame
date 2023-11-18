@@ -257,6 +257,7 @@ class box:
             sitk.WriteImage(img, file_name + "/image.mha")
             sitk.WriteImage(lb, file_name + "/label.mha")
             upload_cache(self.vis_3d_cache_loc, "vis_3d")
+        print("inferer set complete")
 
     # 内部函数 标准化标签
     def _normalize_tag(self, tag=None):

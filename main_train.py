@@ -72,7 +72,7 @@ def main_worker(args, logrbox):
 
     # 获取数据读取器
     # TODO: 重写数据读取器
-    loader = get_loader('./data/msg_064.json')  # 可以指定数据配置
+    loader = get_loader()  # 可以指定数据配置
 
     # 设置模型的推理器
     # TODO: 这个不好看写法，改成自动的更好
