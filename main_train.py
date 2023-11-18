@@ -7,24 +7,21 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.nn.parallel
 import torch.utils.data.distributed
-
-import networks.UNETR
-import utils.arg
-import utils.arg as arg
-from networks.UNETR.unetr import UNETR
-# from networks.unet.unet import unet
-from monai.networks.nets import UNet
-from optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
-from trainer import run_training
-from utils.data_loader.data_utils_old import get_loader
-from utils.BOX import box
-
+from monai import __version__
 from monai.inferers import sliding_window_inference
 from monai.losses import DiceCELoss
 from monai.metrics import DiceMetric
+# from networks.unet.unet import unet
+from monai.networks.nets import UNet
 from monai.transforms import AsDiscrete
 from monai.utils.enums import MetricReduction
-from monai import __version__
+
+import utils.arg
+from networks.UNETR.unetr import UNETR
+from optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
+from trainer import run_training
+from utils.BOX import box
+from utils.data_loader.data_utils_old import get_loader
 
 
 ########################################################################################################

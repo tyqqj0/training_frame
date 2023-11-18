@@ -10,16 +10,18 @@
 # limitations under the License.
 
 import math
+import os
+import re
+import json
 
 import numpy as np
 import torch
-from monai import data
-from monai.data import load_decathlon_datalist
-
 import utils.arg.parser as psr
-from . import transformers
 
 # import monai
+
+from monai import data, transforms
+from monai.data import load_decathlon_datalist
 
 input_train = [
     {
@@ -27,6 +29,49 @@ input_train = [
         'label': 'D:/Data/brains/train/label1/Normal002-MRA.mha'
     }
 ]
+
+
+# def generate_list(data_root='D:Data/brains/train/', check=False, amt=-1):
+#     # 读取data_root下的文件夹
+#     addition_dir = ""
+#     train_dirs = os.path.join(data_root, 'image', addition_dir)
+#     label_dirs = os.path.join(data_root, 'label', addition_dir)
+#
+#     # 读取train_dirs下的文件
+#     train_files = os.listdir(train_dirs)
+#     label_files = os.listdir(label_dirs)
+#
+#     # Convert the list of filenames into a dictionary with extracted numbers as keys for faster lookup
+#     label_files_dict = {re.findall(r'\d+', f)[0]: f for f in label_files}
+#
+#     # 生成一个空列表
+#     input_train = []
+#     # 遍历文件
+#     for i, train_file in enumerate(train_files):
+#         # Extract number from the train_file
+#         number = re.findall(r'\d+', train_file)[0]
+#
+#         # Only add the file if a matching number exists in the label files
+#         if number in label_files_dict:
+#             # 生成一个空字典
+#             input_dict = {}
+#             # 生成文件的路径
+#             train_path = os.path.join(train_dirs, train_file)
+#             label_path = os.path.join(label_dirs, label_files_dict[number])
+#             # 将路径添加到字典中
+#             input_dict['image'] = train_path
+#             input_dict['label'] = label_path
+#             # 将字典添加到列表中
+#             input_train.append(input_dict)
+#
+#         if i == (amt - 1):
+#             break
+#
+#     if check:
+#         # 如果check为True，那么就打印列表中的每个元素
+#         for i in range(len(input_train)):
+#             print(re.findall(r'\d+', input_train[i]['image'])[0], re.findall(r'\d+', input_train[i]['label'])[0])
+#     return input_train
 
 
 class Sampler(torch.utils.data.Sampler):
@@ -91,7 +136,7 @@ def get_loader(data_cfg=None, loader_cfg=None):
     # 如果不存在
     if data_cfg is None:
         try:
-            data_cfg = args.data_cfg  # 读取loader默认数据集
+            data_cfg = args.data_cfg # 读取loader默认数据集
         except:
             raise ValueError("can not find data_cfg")
     # 如果是路径
@@ -105,12 +150,56 @@ def inside_get_loader(args, data_dir_json):
     # create a training data loader
     # data_dir = args.data_dir
     datalist_json = data_dir_json
-    train_transform = transformers.vessel_train_transforms(check=True)
-    val_transform = transformers.vessel_val_transforms(check=True)
+    train_transform = transforms.Compose(  # 一系列的数据增强操作，compose是将多个操作组合起来
+        [
+            transforms.LoadImaged(keys=["image", "label"]),  # 读取图像和标签
+            transforms.AddChanneld(keys=["image", "label"]),  # 增加通道维度
+            transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),  # 调整方向，RAS是右手坐标系
+            transforms.Spacingd(  # 调整像素间距
+                keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
+            ),
+            transforms.ScaleIntensityRanged(  # 调整像素值范围，将像素值范围调整到[0,1]
+                keys=["image"], a_min=args.a_min, a_max=args.a_max, b_min=args.b_min, b_max=args.b_max, clip=True
+            ),
+            transforms.CropForegroundd(keys=["image", "label"], source_key="image"),  # 剪裁图像
+            transforms.RandCropByPosNegLabeld(  # 随机裁剪, 大小为roi_x, roi_y, roi_z，全是96， 另外，正样本和负样本的比例为1:1，样本数量为4
+                keys=["image", "label"],
+                label_key="label",
+                spatial_size=(args.roi_x, args.roi_y, args.roi_z),
+                pos=1,
+                neg=1,
+                num_samples=4,
+                image_key="image",
+                image_threshold=0,
+            ),
+            transforms.RandFlipd(keys=["image", "label"], prob=args.RandFlipd_prob, spatial_axis=0),  # 随机翻转
+            transforms.RandFlipd(keys=["image", "label"], prob=args.RandFlipd_prob, spatial_axis=1),
+            transforms.RandFlipd(keys=["image", "label"], prob=args.RandFlipd_prob, spatial_axis=2),
+            transforms.RandRotate90d(keys=["image", "label"], prob=args.RandRotate90d_prob, max_k=3),  # 随机旋转90度
+            transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=args.RandScaleIntensityd_prob),  # 随机缩放
+            transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=args.RandShiftIntensityd_prob),  # 随机平移
+            transforms.ToTensord(keys=["image", "label"]),  # 转换为tensor，因为之前的操作都是对numpy数组进行的
+        ]
+    )
+    val_transform = transforms.Compose(
+        [
+            transforms.LoadImaged(keys=["image", "label"]),
+            transforms.AddChanneld(keys=["image", "label"]),
+            transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
+            transforms.Spacingd(
+                keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
+            ),
+            transforms.ScaleIntensityRanged(
+                keys=["image"], a_min=args.a_min, a_max=args.a_max, b_min=args.b_min, b_max=args.b_max, clip=True
+            ),
+            transforms.CropForegroundd(keys=["image", "label"], source_key="image"),
+            transforms.ToTensord(keys=["image", "label"]),
+        ]
+    )
 
     if args.test_mode:
         # 测试
-        test_files = load_decathlon_datalist(datalist_json, True, "validation")  # 加载测试数据集, base_dir是数据集的根目录
+        test_files = load_decathlon_datalist(datalist_json, True, "validation")  # 加载测试数据集
 
         # test_files = generate_list(args.test_data_dir)
         test_ds = data.Dataset(data=test_files, transform=val_transform)
