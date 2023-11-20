@@ -82,6 +82,7 @@ def parser_cfg_loader(mode='train', path=""):
 
 class box:
     def __init__(self, mode='train', path=''):
+        self.pytorch_total_params = None
         self.vis_loader = None
         self.model_name = None
         self.threshold = None
@@ -584,6 +585,7 @@ class box:
         self.check_active_run()
         # 将self的是否有可视化的图像标志设为真
         self.got_vis_image = True
+        self.pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
         return model, int(epoch), accuracy
 
     def get_frq(self):
@@ -594,6 +596,7 @@ class box:
         # 出示服务器
         print("mlflow server: ", mlflow.get_tracking_uri())
         self.check_active_run()
+
         # 模拟参数
         run_name = None
         model_name = self.model_name
@@ -610,6 +613,8 @@ class box:
             self.run = mlflow.start_run(run_name=run_name)
         if not self.args.is_continue:
             self._normalize_tag()  # 注意一些方法会提前启动运行
+        # 提交模型参数量
+        mlflow.log_param("pytorch_total_params", self.pytorch_total_params)
         '''
         mlflow.log_param()
         mlflow.log_params()
