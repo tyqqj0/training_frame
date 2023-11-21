@@ -59,6 +59,7 @@ def parser_cfg_loader(mode='train', path=""):
         print("loading config ", mode)
         config_reader = utils.arg.parser.ConfigReader(mode)
         cfg = config_reader.get_config()
+        config_reader.check()
         arg_parser = utils.arg.parser.ArgParser(cfg)
         args = arg_parser.parse_args()
     else:
@@ -243,6 +244,7 @@ class box:
         self.stb_counter = GradientStats(model)
         self.pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
         self.pytorch_total_layers = len(self.stb_counter.get_model_layers())
+        print("layers:", self.stb_counter.get_model_layers())
 
     def save_vis_image(self):
         if self.vis_3d:
@@ -383,7 +385,7 @@ class box:
         print_line('down')
         self.update_matrix(metrics_dict)
         # 更新梯度稳定度
-        if self.stb_counter is not None:
+        if self.stb_counter is not None and self.epoch_stage == "train":
             matrix = self.stb_counter.compute_unstable_perlayer()
             self.update_matrix(matrix)
 
@@ -734,12 +736,19 @@ def get_latest_model_version(model_name):
 class GradientStats:
     def __init__(self, model):
         print_line('up')
+        self.loc = 2  # 对unet暂时设成2，因为前面有个model, 要改的
         self.model = model
         # 如果model的参数是model(monai中这么实现的),就将model变为model.model
-        named_params = list(self.model.named_parameters())
+        # named_params = list(self.model.named_parameters())
+        # if len(named_params) == 1 and named_params[0][0] == "model":
+        #     self.model = self.model.model
+        # self.grads = {name: [] for name, _ in self.model.named_parameters()}
+        named_params = list(model.named_parameters())
         if len(named_params) == 1 and named_params[0][0] == "model":
-            self.model = self.model.model
-        self.grads = {name: [] for name, _ in self.model.named_parameters()}
+            print("computing model.model")
+            model = model.model
+            self.loc = self.loc + 1
+        self.grads = {name: [] for name, _ in model.named_parameters()}
         self.hooks = []
 
         for name, param in self.model.named_parameters():
@@ -749,10 +758,11 @@ class GradientStats:
 
         print(text_in_box("computing gradient stability"))
         print("self.grads name: ", self.grads.keys())
+        print("self.hooks name: ", self.hooks)
         print_line('down')
 
     def get_model_layers(self):
-        return set([name.split('.')[0] for name in self.model.state_dict().keys()])
+        return set(['.'.join(name.split('.')[0:self.loc]) for name in self.model.state_dict().keys()])
 
     def save_grad(self, name):
         def hook(grad):
@@ -768,7 +778,7 @@ class GradientStats:
 
         # 计算每个层的梯度不稳定性
         layer_instability = {}
-        for layer in set([name.split('.')[0] for name in self.model.state_dict().keys()]):
+        for layer in set(['.'.join(name.split('.')[0:self.loc + 1]) for name in self.model.state_dict().keys()]):
             layer_instability["stb_count_" + layer] = sum(
                 val for key, val in grad_instability.items() if key.startswith(layer))
 

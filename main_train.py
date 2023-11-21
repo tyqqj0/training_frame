@@ -38,7 +38,7 @@ def main():
     # utils.arg.parser.save_parser_to_json(box.parser_cfg_loader()[1], "./box.json")
     # return
     logrbox = box.box(mode='train_msg')
-    logrbox.check_args()
+    # logrbox.check_args()
     # print(logrbox.args)
     # _, parser = box.parser_cfg_loader()
     # utils.arg.parser.save_parser_to_json(parser, './utils/BOX/cfg/train1.json')

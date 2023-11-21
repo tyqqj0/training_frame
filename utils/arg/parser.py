@@ -45,6 +45,10 @@ class ConfigReader:
             else:
                 raise ValueError("需要配置文件", namecf, "请检查路径是否正确")
 
+    def check(self):
+        abs_path = os.path.abspath(self.config_file)
+        print(f"Check the config at: file://{abs_path}")
+
     def create_default_config(self, namecf='None'):
         """Creates a default configuration file if none exists."""
         self.config = {
@@ -105,6 +109,10 @@ class ArgParser:
     def get_parser(self):
         """Returns the 'argparse.ArgumentParser' instance."""
         return self.parser
+
+    # def check(self):
+    #     abs_path = os.path.abspath(self.)
+    #     print(f"Check the config at: file://{abs_path}")
 
     def __str__(self):
         """Returns a string representation of the parsed arguments."""
@@ -169,8 +177,8 @@ def get_args(config_file, cfname='None', check=True):
     arg_parser = ArgParser(config, cfname)
     args = arg_parser.parse_args()
     if check:
-        print(f"config file {config['name']}:")
-        print(arg_parser)
+        abs_path = os.path.abspath(config_file)
+        print(f"Check the config at: file://{abs_path}")
     return args
 
 # Uncomment to use:
