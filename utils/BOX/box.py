@@ -83,6 +83,7 @@ def parser_cfg_loader(mode='train', path=""):
 
 class box:
     def __init__(self, mode='train', path=''):
+        self.tag = None
         self.stb_counter = None
         self.pytorch_total_layers = None
         self.pytorch_total_params = None
@@ -217,6 +218,10 @@ class box:
         print('Initializing BOX complete')
         print_line('down')
 
+    def add_tags(self, tag):
+        if isinstance(tag, dict):
+            self.tag = tag
+
     def check_args(self):
         print("BOX load args: \n", json.dumps(vars(self.args), indent=4))
         return
@@ -295,6 +300,9 @@ class box:
             pass
         for k, v in vars(self.args).items():
             mlflow.log_param(k, v)
+        if tag is not None:
+            for k, v in tag.items():
+                mlflow.log_param(k, v)
 
     def start_epoch(self, loader, stage, epoch, use_vis=None):
         # self.epoch_start_time = time.time()
@@ -632,7 +640,7 @@ class box:
             print("using new run name: ", run_name)
             self.run = mlflow.start_run(run_name=run_name)
         if not self.args.is_continue:
-            self._normalize_tag()  # 注意一些方法会提前启动运行
+            self._normalize_tag(self.tag)  # 注意一些方法会提前启动运行
         # 提交模型参数量
         mlflow.log_param("pytorch_total_params", self.pytorch_total_params)
         mlflow.log_param("pytorch_total_layers", self.pytorch_total_layers)

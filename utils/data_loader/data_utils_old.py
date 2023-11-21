@@ -265,7 +265,7 @@ def inside_get_loader(args, data_dir_json):
             persistent_workers=True,
         )
         print(train_ds, val_ds, vis_ds)
-        loader = [train_loader, val_loader, vis_loader]
+        loader = [train_loader, val_loader, vis_loader], data_dir_json
 
     return loader
 
