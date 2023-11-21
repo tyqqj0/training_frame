@@ -108,7 +108,7 @@ def main_worker(args, logrbox):
 
     # 设置学习率调整器
     scheduler = set_lrschedule(optimizer, start_epoch, args.max_epochs, args.lrschedule, args.warmup_epochs)
-    logrbox.set_tags({"data_json": data_json})
+    logrbox.add_tags({"data_json": data_json})
     with logrbox as run:
         accuracy = run_training(  # 训练
             model=model,
