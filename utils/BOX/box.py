@@ -82,6 +82,8 @@ def parser_cfg_loader(mode='train', path=""):
 
 class box:
     def __init__(self, mode='train', path=''):
+        self.stb_counter = None
+        self.pytorch_total_layers = None
         self.pytorch_total_params = None
         self.vis_loader = None
         self.model_name = None
@@ -124,7 +126,7 @@ class box:
         self.got_vis_image = False
 
         print_line('up')
-        print("Initializing BOX")
+        print(text_in_box("Initializing BOX"))
 
         # 实验模式检查
         # if self.mode is None:
@@ -238,6 +240,7 @@ class box:
         # self.save_vis_image()
         print("inferer set complete")
         self.check_active_run()
+        self.stb_counter = GradientStats(model)
 
     def save_vis_image(self):
         if self.vis_3d:
@@ -294,7 +297,7 @@ class box:
         if stage == 'train':
             self.timer = epoch_timer()
             self.timer.start(epoch)
-        print(f"BOX start {stage} epoch: ", epoch + 1)
+        print(text_in_box(f"BOX start {stage} epoch: ", epoch + 1))
         self.epoch = epoch
         self.epoch_stage = stage
         self.use_vis = use_vis
@@ -373,9 +376,19 @@ class box:
         # 计算参数列表,获取参数
 
         print_line('up')
-        print("BOX end epoch, epoch: ", self.epoch + 1, " stage: ", self.epoch_stage)
+        print(text_in_box("BOX end epoch, epoch: " + self.epoch + 1 + " stage: " + self.epoch_stage))
         metrics_dict = self.evler.end_epoch()
         print_line('down')
+        self.update_matrix(metrics_dict)
+        # 更新梯度稳定度
+        if self.stb_counter is not None:
+            matrix = self.stb_counter.compute_unstable_perlayer()
+            self.update_matrix(matrix)
+
+    def update_matrix(self, metrics_dict):
+        # 检查是否是字典
+        if not isinstance(metrics_dict, dict):
+            raise ValueError("metrics_dict must be a dict")
         for metric, value in metrics_dict.items():
             mlflow.log_metric(self.epoch_stage + '_' + metric, value, step=self.epoch + 1)
 
@@ -389,13 +402,15 @@ class box:
     # self.visualizes(loader, model)
 
     def visualizes(self, model):
+        # 显示存储位置
+        # print(mlflow)
         loader = self.vis_loader
         if self.got_vis_image is False:
             self.save_vis_image()
         if self.log_frq is not None and self.use_vis:
             if (self.epoch + 1) % self.log_frq == 0:
                 # 显示
-                print("visualize epoch: ", self.epoch + 1)
+                print(text_in_box("visualize epoch: " + str(self.epoch + 1)))
                 start_time = time.time()
                 data, logits, output, target = self.predict_one_3d(loader, model, self.threshold)
                 if self.vis_2d:
@@ -536,11 +551,11 @@ class box:
         self.model_name = set_model_name
         # 加载模型
         # 检查是否应加载模型
-        if not self.args.is_continue and (load_run_id is None or load_run_id is '') and (
-                load_model_name is None or load_model_name is ''):
+        if not self.args.is_continue and (load_run_id is None or load_run_id == '') and (
+                load_model_name is None or load_model_name == ''):
             return model, 0, -1
         # 默认从继续运行的run_id中加载模型
-        if load_run_id is None or load_run_id is '':
+        if load_run_id is None or load_run_id == '':
             load_run_id = self.run_id
         if load_run_id is None:
             return
@@ -555,7 +570,7 @@ class box:
 
         # 使用运行的名称作为模型名称
         model_name = run.data.tags['mlflow.runName']
-        if load_model_name is not None and load_model_name is not '':
+        if load_model_name is not None and load_model_name != '':
             model_name = load_model_name
         if best_model:
             model_name += "_best"
@@ -586,6 +601,7 @@ class box:
         # 将self的是否有可视化的图像标志设为真
         self.got_vis_image = True
         self.pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        self.pytorch_total_layers = len({name: [] for name, a in model.named_parameters() if a.requires_grad})
         return model, int(epoch), accuracy
 
     def get_frq(self):
@@ -615,6 +631,7 @@ class box:
             self._normalize_tag()  # 注意一些方法会提前启动运行
         # 提交模型参数量
         mlflow.log_param("pytorch_total_params", self.pytorch_total_params)
+        mlflow.log_param("pytorch_total_layers", self.pytorch_total_layers)
         '''
         mlflow.log_param()
         mlflow.log_params()
@@ -715,6 +732,46 @@ def get_latest_model_version(model_name):
         return None
 
 
+# def compute_unstable_perlayer(model):
+
+
+class GradientStats:
+    def __init__(self, model):
+        self.model = model
+        self.grads = {name: [] for name, _ in model.named_parameters()}
+        self.hooks = []
+
+        for name, param in model.named_parameters():
+            hook = param.register_hook(self.save_grad(name))
+            self.hooks.append(hook)
+
+    def save_grad(self, name):
+        def hook(grad):
+            self.grads[name].append(grad.clone())
+
+        return hook
+
+    def compute_unstable_perlayer(self):
+        # 计算每个参数的梯度不稳定性
+        grad_instability = {name: np.var([g.detach().cpu().numpy() for g in grads])
+                            for name, grads in self.grads.items()}
+
+        # 计算每个层的梯度不稳定性
+        layer_instability = {}
+        for layer in set([name.split('.')[0] for name in self.model.state_dict().keys()]):
+            layer_instability["stb_count_" + layer] = sum(
+                val for key, val in grad_instability.items() if key.startswith(layer))
+
+        # 清空grads
+        self.grads = {name: [] for name, _ in self.model.named_parameters()}
+
+        return layer_instability
+
+    def remove_hooks(self):
+        for hook in self.hooks:
+            hook.remove()
+
+
 class epoch_timer:
     def __init__(self):
         self.start_time = None
@@ -756,3 +813,21 @@ def print_line(up_or_down, len=65):
     else:
         print('Invalid input')
         raise ValueError
+
+
+def text_in_box(text, length=65, center=True):
+    # Split the text into lines that are at most `length` characters long
+    lines = [text[i:i + length] for i in range(0, len(text), length)]
+
+    # Create the box border, with a width of `length` characters
+    up_border = '┏' + '━' * (length + 2) + '┓'
+    down_border = '┗' + '━' * (length + 2) + '┛'
+    # Create the box contents
+    contents = '\n'.join(['┃ ' + (line.center(length) if center else line.ljust(length)) + ' ┃' for line in lines])
+
+    # Combine the border and contents to create the final box
+    box = '\n'.join([up_border, contents, down_border])
+
+    return box
+
+# print(text_in_box('abcdes'))
