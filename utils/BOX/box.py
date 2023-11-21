@@ -242,7 +242,7 @@ class box:
         self.check_active_run()
         self.stb_counter = GradientStats(model)
         self.pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        self.pytorch_total_layers = len({name: [] for name, a in model.named_parameters() if a.requires_grad})
+        self.pytorch_total_layers = len(self.stb_counter.get_model_layers())
 
     def save_vis_image(self):
         if self.vis_3d:
@@ -391,6 +391,7 @@ class box:
         # 检查是否是字典
         if not isinstance(metrics_dict, dict):
             raise ValueError("metrics_dict must be a dict")
+        print("updating {} metrics".format(len(metrics_dict)))
         for metric, value in metrics_dict.items():
             mlflow.log_metric(self.epoch_stage + '_' + metric, value, step=self.epoch + 1)
 
@@ -732,30 +733,37 @@ def get_latest_model_version(model_name):
 
 class GradientStats:
     def __init__(self, model):
+        print_line('up')
         self.model = model
         # 如果model的参数是model(monai中这么实现的),就将model变为model.model
-        if {name: [] for name, _ in model.named_parameters()} == {"model"}:
-            model = model
-        self.grads = {name: [] for name, _ in model.named_parameters()}
+        named_params = list(self.model.named_parameters())
+        if len(named_params) == 1 and named_params[0][0] == "model":
+            self.model = self.model.model
+        self.grads = {name: [] for name, _ in self.model.named_parameters()}
         self.hooks = []
 
-        for name, param in model.named_parameters():
+        for name, param in self.model.named_parameters():
+            print("register hook for ", name)
             hook = param.register_hook(self.save_grad(name))
             self.hooks.append(hook)
 
         print(text_in_box("computing gradient stability"))
         print("self.grads name: ", self.grads.keys())
+        print_line('down')
+
+    def get_model_layers(self):
+        return set([name.split('.')[0] for name in self.model.state_dict().keys()])
 
     def save_grad(self, name):
         def hook(grad):
-            print("update grad")
+            # print("update grad")
             self.grads[name].append(grad.clone())
 
         return hook
 
     def compute_unstable_perlayer(self):
         # 计算每个参数的梯度不稳定性
-        grad_instability = {name: np.var([g.detach().cpu().numpy() for g in grads])
+        grad_instability = {name: np.std([g.detach().cpu().numpy() for g in grads])
                             for name, grads in self.grads.items()}
 
         # 计算每个层的梯度不稳定性
