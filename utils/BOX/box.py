@@ -243,7 +243,7 @@ class box:
         self.check_active_run()
         self.stb_counter = GradientStats(model)
         self.pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        self.pytorch_total_layers = len(self.stb_counter.get_model_layers())
+        self.pytorch_total_layers = self.stb_counter.get_model_layers()
         print("layers:", self.stb_counter.get_model_layers())
 
     def save_vis_image(self):
@@ -761,8 +761,30 @@ class GradientStats:
         print("self.hooks name: ", self.hooks)
         print_line('down')
 
-    def get_model_layers(self):
-        return set(['.'.join(name.split('.')[0:self.loc]) for name in self.model.state_dict().keys()])
+    def get_model_layers(self, n=None):
+        if n is None:
+            n = ["conv", "adn", "residual", "up", "down", "final"]
+        if n == "all":
+            # 拼接所有的weight和bias，并返回所有的模块名称
+            return {name: params for name, params in self.model.state_dict().items() if
+                    'weight' in name or 'bias' in name}
+        elif isinstance(n, int):
+            # 返回指定数量的模块名称
+            return set(['.'.join(name.split('.')[0:n]) for name in self.model.state_dict().keys()])
+        elif isinstance(n, list):
+            # 假设 n 是一个包含最小跟踪单位的列表
+            track_units = n
+            unique_names = set()
+            for name in self.model.state_dict().keys():
+                for unit in track_units:
+                    if unit in name:
+                        # 找到单位在名称中的位置，然后取出前面的部分
+                        pos = name.index(unit)
+                        unique_names.add(name[:pos + len(unit)])
+                        break
+            return unique_names
+        else:
+            raise ValueError(f"Unsupported type of n: {type(n)}")
 
     def save_grad(self, name):
         def hook(grad):
@@ -778,7 +800,7 @@ class GradientStats:
 
         # 计算每个层的梯度不稳定性
         layer_instability = {}
-        for layer in set(['.'.join(name.split('.')[0:self.loc + 1]) for name in self.model.state_dict().keys()]):
+        for layer in self.get_model_layers():
             layer_instability["stb_count_" + layer] = sum(
                 val for key, val in grad_instability.items() if key.startswith(layer))
 
