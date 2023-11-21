@@ -733,6 +733,9 @@ def get_latest_model_version(model_name):
 class GradientStats:
     def __init__(self, model):
         self.model = model
+        # 如果model的参数是model(monai中这么实现的),就将model变为model.model
+        if {name: [] for name, _ in model.named_parameters()} == {"model"}:
+            model = model
         self.grads = {name: [] for name, _ in model.named_parameters()}
         self.hooks = []
 
@@ -740,8 +743,12 @@ class GradientStats:
             hook = param.register_hook(self.save_grad(name))
             self.hooks.append(hook)
 
+        print(text_in_box("computing gradient stability"))
+        print("self.grads name: ", self.grads.keys())
+
     def save_grad(self, name):
         def hook(grad):
+            print("update grad")
             self.grads[name].append(grad.clone())
 
         return hook
