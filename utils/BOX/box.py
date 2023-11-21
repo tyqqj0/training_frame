@@ -734,7 +734,7 @@ def get_latest_model_version(model_name):
 
 
 class GradientStats:
-    def __init__(self, model):
+    def __init__(self, model, mode='mean'):
         print_line('up')
         self.loc = 2  # 对unet暂时设成2，因为前面有个model, 要改的
         self.model = model
@@ -750,6 +750,7 @@ class GradientStats:
             self.loc = self.loc + 1
         self.grads = {name: [] for name, _ in model.named_parameters()}
         self.hooks = []
+        self.mode = mode
 
         for name, param in self.model.named_parameters():
             print("register hook for ", name)
@@ -801,8 +802,12 @@ class GradientStats:
         # 计算每个层的梯度不稳定性
         layer_instability = {}
         for layer in self.get_model_layers():
-            layer_instability["stb_count_" + layer] = sum(
-                val for key, val in grad_instability.items() if key.startswith(layer))
+            if self.mode == "sum":
+                layer_instability["stb_count_" + layer] = sum(
+                    val for key, val in grad_instability.items() if key.startswith(layer))
+            elif self.mode == "mean":
+                layer_values = [val for key, val in grad_instability.items() if key.startswith(layer)]
+                layer_instability["stb_mean_" + layer] = np.mean(layer_values) if layer_values else 0
 
         # 清空grads
         self.grads = {name: [] for name, _ in self.model.named_parameters()}
