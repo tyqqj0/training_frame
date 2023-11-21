@@ -1,6 +1,11 @@
 {
   "name": "train",
   "DEFAULT": {
+    "log_url": {
+      "default": "http://localhost:5000",
+      "type": "str",
+      "help": "server url"
+    },
     "mode": {
       "default": "train",
       "type": "str",
@@ -75,13 +80,13 @@
       "help": "log frequency"
     },
     "vis_3d": {
-      "default": false,
+      "default": true,
       "type": null,
       "help": "visualize 3d images",
       "action": "store_true"
     },
     "vis_3d_frq": {
-      "default": 250,
+      "default": 1,
       "type": "int",
       "help": "visualize 3d images frequency"
     },

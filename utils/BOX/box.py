@@ -241,6 +241,8 @@ class box:
         print("inferer set complete")
         self.check_active_run()
         self.stb_counter = GradientStats(model)
+        self.pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        self.pytorch_total_layers = len({name: [] for name, a in model.named_parameters() if a.requires_grad})
 
     def save_vis_image(self):
         if self.vis_3d:
@@ -297,7 +299,7 @@ class box:
         if stage == 'train':
             self.timer = epoch_timer()
             self.timer.start(epoch)
-        print(text_in_box(f"BOX start {stage} epoch: ", epoch + 1))
+        print(text_in_box(f"BOX start {stage} epoch: " + str(epoch + 1)))
         self.epoch = epoch
         self.epoch_stage = stage
         self.use_vis = use_vis
@@ -376,7 +378,7 @@ class box:
         # 计算参数列表,获取参数
 
         print_line('up')
-        print(text_in_box("BOX end epoch, epoch: " + self.epoch + 1 + " stage: " + self.epoch_stage))
+        print(text_in_box("BOX end epoch, epoch: " + str(self.epoch + 1) + " stage: " + self.epoch_stage))
         metrics_dict = self.evler.end_epoch()
         print_line('down')
         self.update_matrix(metrics_dict)
@@ -600,8 +602,7 @@ class box:
         self.check_active_run()
         # 将self的是否有可视化的图像标志设为真
         self.got_vis_image = True
-        self.pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        self.pytorch_total_layers = len({name: [] for name, a in model.named_parameters() if a.requires_grad})
+
         return model, int(epoch), accuracy
 
     def get_frq(self):
@@ -661,23 +662,17 @@ class box:
 
 def upload_cache(cache_loc, artifact_path=None):
     if artifact_path is None:
-        artifact_path = os.path.basename(cache_loc)  # 例:./runcache/vis_2d_200 -> vis_2d_200
-    # 检查缓存位置是否存在
+        artifact_path = os.path.basename(cache_loc)
     if not os.path.exists(cache_loc):
-        raise ValueError("vis_3d_cache_loc not exists")
-    # 如果是文件
+        raise ValueError(f"{cache_loc} does not exist")
     if os.path.isfile(cache_loc):
-        # 找到缓存的文件
-        for filename in os.listdir(cache_loc):
-            file_path = os.path.join(cache_loc, filename)
-            if os.path.isfile(file_path):
-                mlflow.log_artifact(file_path, artifact_path=artifact_path)
+        mlflow.log_artifact(cache_loc, artifact_path=artifact_path)
     elif os.path.isdir(cache_loc):
-        for filename in os.listdir(cache_loc):
-            file_path = os.path.join(cache_loc, filename)
-            mlflow.log_artifacts(file_path, artifact_path=artifact_path)
+        if not os.listdir(cache_loc):
+            raise ValueError(f"{cache_loc} is an empty directory")
+        mlflow.log_artifacts(cache_loc, artifact_path=artifact_path)
     else:
-        raise ValueError("vis_3d_cache_loc is not file or dir")
+        raise ValueError(f"{cache_loc} is neither a file nor a directory")
 
 
 def stop_all_runs():

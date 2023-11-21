@@ -37,7 +37,7 @@ def main():
     # utils.arg.parser.save_parser_to_json(parser, "./UNTER.json")
     # utils.arg.parser.save_parser_to_json(box.parser_cfg_loader()[1], "./box.json")
     # return
-    logrbox = box.box(mode='train')
+    logrbox = box.box(mode='train_msg')
     logrbox.check_args()
     # print(logrbox.args)
     # _, parser = box.parser_cfg_loader()
@@ -72,7 +72,7 @@ def main_worker(args, logrbox):
     logrbox.check_active_run()
     # 获取数据读取器
     # TODO: 重写数据读取器
-    loader = get_loader()  # 可以指定数据配置
+    loader = get_loader(loader_cfg='./utils/data_loader/loader_stbcnt_old.json')  # 可以指定数据配置
 
     # 设置模型的推理器
     # TODO: 这个不好看写法，改成自动的更好

@@ -167,38 +167,18 @@
             "label": "D:/gkw/data/misguide_data/label/Normal006.mha"
         },
         {
-            "image": "D:/gkw/data/misguide_data/image/Normal020.mha",
-            "label": "D:/gkw/data/misguide_data/label/Normal020.mha"
+            "image": "D:/gkw/data/misguide_data/image/Normal008.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal008.mha"
         },
         {
-            "image": "D:/gkw/data/misguide_data/image/Normal021.mha",
-            "label": "D:/gkw/data/misguide_data/label/Normal021.mha"
-        },
-        {
-            "image": "D:/gkw/data/misguide_data/image/Normal022.mha",
-            "label": "D:/gkw/data/misguide_data/label/Normal022.mha"
-        },
-        {
-            "image": "D:/gkw/data/misguide_data/image/Normal023.mha",
-            "label": "D:/gkw/data/misguide_data/label/Normal023.mha"
-        },
-        {
-            "image": "D:/gkw/data/misguide_data/image/Normal025.mha",
-            "label": "D:/gkw/data/misguide_data/label/Normal025.mha"
-        },
-        {
-            "image": "D:/gkw/data/misguide_data/image/Normal043.mha",
-            "label": "D:/gkw/data/misguide_data/label/Normal043.mha"
-        },
-        {
-            "image": "D:/gkw/data/misguide_data/image/Normal086.mha",
-            "label": "D:/gkw/data/misguide_data/label/Normal086.mha"
+            "image": "D:/gkw/data/misguide_data/image/Normal009.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal009.mha"
         }
     ],
     "vis": [
-    {
-      "image": "D:/zhangchaoran/miccai_achieve/data/test/image/Normal074.mha",
-      "label": "D:/zhangchaoran/miccai_achieve/data/test/label/Normal074.mha"
-    }
-  ]
+        {
+            "image": "D:/gkw/data/vis/image/Normal074.mha",
+            "label": "D:/gkw/data/vis/label/Normal074.mha"
+        }
+    ]
 }
