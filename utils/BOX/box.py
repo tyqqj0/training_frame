@@ -248,8 +248,8 @@ class box:
         self.check_active_run()
         self.stb_counter = GradientStats(model)
         self.pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        self.pytorch_total_layers = self.stb_counter.get_model_layers()
-        print("layers:", self.stb_counter.get_model_layers())
+        self.pytorch_total_layers = len(self.stb_counter.get_model_layers())
+        print("layers:", len(self.stb_counter.get_model_layers()), self.stb_counter.get_model_layers())
 
     def save_vis_image(self):
         if self.vis_3d:

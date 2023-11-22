@@ -46,8 +46,8 @@ class ConfigReader:
                 raise ValueError("需要配置文件", namecf, "请检查路径是否正确")
 
     def check(self):
-        abs_path = os.path.abspath(self.config_file)
-        print(f"Check the config at: file://{abs_path}")
+        abs_path = os.path.abspath(self.config_file).replace('\\', '/')
+        print(f"Check the config at: file:///{abs_path}")
 
     def create_default_config(self, namecf='None'):
         """Creates a default configuration file if none exists."""
@@ -177,8 +177,8 @@ def get_args(config_file, cfname='None', check=True):
     arg_parser = ArgParser(config, cfname)
     args = arg_parser.parse_args()
     if check:
-        abs_path = os.path.abspath(config_file)
-        print(f"Check the config at: file://{abs_path}")
+        abs_path = os.path.abspath(config_file).replace('\\', '/')
+        print(f"Check the config at: file:///{abs_path}")
     return args
 
 # Uncomment to use:

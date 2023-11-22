@@ -55,7 +55,7 @@ if __name__ == "__main__":
     dirstt = {
         "train": {
             "image": "D:\\gkw\\data\\misguide_data\\image",
-            "label": "D:\\gkw\\data\\misguide_data\\label_dce064"
+            "label": "D:\\gkw\\data\\misguide_data\\label_dce_front"
         },
         "val": {
             "image": "D:\\gkw\\data\\misguide_data\\image",
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     all_lists = get_dsets(dirstt)
 
     # print(all_lists)
-    with open("../data/msg_064.json", "w") as dlj:
+    with open("../data/msg_front.json", "w") as dlj:
         json.dump(all_lists, dlj, indent=4)
 
 # get_a_set()

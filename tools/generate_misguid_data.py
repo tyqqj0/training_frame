@@ -72,7 +72,7 @@ msg_arg_dice064 = {
         "threshold": 0.5
     }
 }
-msg_arg_dice_056 = {
+msg_arg_dice056 = {
     "discribtion": "模拟全误导数据",
     "mask_generator_1": {
         "blur_size": 1,
@@ -334,5 +334,5 @@ if __name__ == "__main__":
     # 解析出输入参数
     # args = parser.parse_args()
     input_path = "D:/gkw/data/misguide_data/label"
-    output_path = "D:/gkw/data/misguide_data/label_dce067"
-    add_misguide_to_dataset(input_path, output_path, msg_arg=msg_arg_dice067, render=True)
+    output_path = "D:/gkw/data/misguide_data/label_dce_front"
+    add_misguide_to_dataset(input_path, output_path, msg_arg=msg_arg_dice056, render=True)

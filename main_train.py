@@ -111,7 +111,8 @@ def main_worker(args, logrbox):
     scheduler = set_lrschedule(optimizer, start_epoch, args.max_epochs, args.lrschedule, args.warmup_epochs)
     combined_dict = {**{"data_json": data_json}, **args.__dict__}
     # logrbox.set_tags(combined_dict)
-    logrbox.set_tags(combined_dict)  # {"data_json": data_json, "args": args.__dict__}
+    logrbox.add_tags(combined_dict)  # {"data_json": data_json, "args": args.__dict__}
+    # logrbox.add_tags({"data_json": data_json})
     with logrbox as run:
         accuracy = run_training(  # 训练
             model=model,
