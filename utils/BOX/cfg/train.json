@@ -11,12 +11,6 @@
       "type": "str",
       "help": "running mode"
     },
-    "amp": {
-      "default": true,
-      "type": null,
-      "help": "use amp for training",
-      "action": "store_true"
-    },
     "is_continue": {
       "default": false,
       "type": null,

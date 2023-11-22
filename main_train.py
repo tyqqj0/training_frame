@@ -33,10 +33,11 @@ def main():
     :return:
     '''
     # 获取模型的参数
-    args = utils.arg.get_args("./run_set.json")
+    args = utils.arg.get_args("./run_set_cptstb.json")
     # utils.arg.parser.save_parser_to_json(parser, "./UNTER.json")
     # utils.arg.parser.save_parser_to_json(box.parser_cfg_loader()[1], "./box.json")
     # return
+    args.amp = not args.noamp
     logrbox = box.box(mode='train_msg')
     # logrbox.check_args()
     # print(logrbox.args)
@@ -45,7 +46,7 @@ def main():
     # 将框架参数同步到模型
     # return
     args.val_every = logrbox.get_frq()  # TODO: 这个不好看写法, 参数关系再想想
-    args.amp = not args.noamp
+
 
     if args.distributed:
         args.ngpus_per_node = torch.cuda.device_count()
@@ -111,6 +112,7 @@ def main_worker(args, logrbox):
     scheduler = set_lrschedule(optimizer, start_epoch, args.max_epochs, args.lrschedule, args.warmup_epochs)
     combined_dict = {**{"data_json": data_json}, **args.__dict__}
     # logrbox.set_tags(combined_dict)
+    print(combined_dict)
     logrbox.add_tags(combined_dict)  # {"data_json": data_json, "args": args.__dict__}
     # logrbox.add_tags({"data_json": data_json})
     with logrbox as run:

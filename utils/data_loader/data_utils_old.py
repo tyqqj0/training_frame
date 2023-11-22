@@ -153,7 +153,7 @@ def inside_get_loader(args, data_dir_json):
     datalist_json = data_dir_json
     train_transform = transforms.Compose(  # 一系列的数据增强操作，compose是将多个操作组合起来
         [
-            transforms.LoadImaged(keys=["image", "label"]),  # 读取图像和标签
+            transforms.LoadImaged(keys=["image", "label"], image_only=False),  # 读取图像和标签
             transforms.EnsureChannelFirstd(keys=["image", "label"]),  # 增加通道维度
             transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),  # 调整方向，RAS是右手坐标系
             transforms.Spacingd(  # 调整像素间距
@@ -184,7 +184,7 @@ def inside_get_loader(args, data_dir_json):
     )
     val_transform = transforms.Compose(
         [
-            transforms.LoadImaged(keys=["image", "label"]),
+            transforms.LoadImaged(keys=["image", "label"], image_only=False),
             transforms.EnsureChannelFirstd(keys=["image", "label"]),
             transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
             transforms.Spacingd(
