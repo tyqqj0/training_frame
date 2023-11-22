@@ -72,7 +72,8 @@ def main_worker(args, logrbox):
     logrbox.check_active_run()
     # 获取数据读取器
     # TODO: 重写数据读取器
-    loader, data_json = get_loader(loader_cfg='./utils/data_loader/loader_stbcnt_old.json')  # 可以指定数据配置
+    loader, data_json = get_loader(data_cfg="./data/msg_front.json",
+                                   loader_cfg='./utils/data_loader/loader_stbcnt_old.json')  # 可以指定数据配置
 
     # 设置模型的推理器
     # TODO: 这个不好看写法，改成自动的更好
@@ -108,7 +109,9 @@ def main_worker(args, logrbox):
 
     # 设置学习率调整器
     scheduler = set_lrschedule(optimizer, start_epoch, args.max_epochs, args.lrschedule, args.warmup_epochs)
-    logrbox.set_tags({"data_json": data_json})
+    combined_dict = {**{"data_json": data_json}, **args.__dict__}
+    # logrbox.set_tags(combined_dict)
+    logrbox.set_tags(combined_dict)  # {"data_json": data_json, "args": args.__dict__}
     with logrbox as run:
         accuracy = run_training(  # 训练
             model=model,

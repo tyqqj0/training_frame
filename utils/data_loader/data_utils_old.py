@@ -137,7 +137,7 @@ def get_loader(data_cfg=None, loader_cfg=None):
     # 如果不存在
     if data_cfg is None:
         try:
-            data_cfg = args.data_cfg # 读取loader默认数据集
+            data_cfg = args.data_cfg  # 读取loader默认数据集
         except:
             raise ValueError("can not find data_cfg")
     # 如果是路径
@@ -154,7 +154,7 @@ def inside_get_loader(args, data_dir_json):
     train_transform = transforms.Compose(  # 一系列的数据增强操作，compose是将多个操作组合起来
         [
             transforms.LoadImaged(keys=["image", "label"]),  # 读取图像和标签
-            transforms.AddChanneld(keys=["image", "label"]),  # 增加通道维度
+            transforms.EnsureChannelFirstd(keys=["image", "label"]),  # 增加通道维度
             transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),  # 调整方向，RAS是右手坐标系
             transforms.Spacingd(  # 调整像素间距
                 keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
@@ -185,7 +185,7 @@ def inside_get_loader(args, data_dir_json):
     val_transform = transforms.Compose(
         [
             transforms.LoadImaged(keys=["image", "label"]),
-            transforms.AddChanneld(keys=["image", "label"]),
+            transforms.EnsureChannelFirstd(keys=["image", "label"]),
             transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
             transforms.Spacingd(
                 keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
