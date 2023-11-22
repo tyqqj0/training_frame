@@ -64,7 +64,7 @@
     },
     "momentum": {
       "help": "momentum",
-      "default": 0.99,
+      "default": 0.10,
       "type": "float"
     },
     "noamp": {
