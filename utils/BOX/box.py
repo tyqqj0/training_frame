@@ -807,7 +807,7 @@ class GradientStats:
 
     def compute_unstable_perlayer(self, n=None):
         # 计算每个参数的梯度不稳定性
-        grad_instability = {name: np.std([g.detach().cpu().numpy() for g in grads])
+        grad_instability = {name: [g.detach().cpu().numpy() for g in grads]
                             for name, grads in self.grads.items()}
 
         # 计算每个层的梯度不稳定性
@@ -818,7 +818,7 @@ class GradientStats:
                     val for key, val in grad_instability.items() if key.startswith(layer))
             elif self.mode == "mean":
                 layer_values = [val for key, val in grad_instability.items() if key.startswith(layer)]
-                print("layer {} values: {}".format(layer, layer_values))
+                print("layer {} value shape: {}".format(layer, layer_values.shape))
                 layer_instability["stb_mean_" + layer] = np.mean(layer_values) if layer_values else 0
 
         # 清空grads
