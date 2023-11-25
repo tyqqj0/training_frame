@@ -84,6 +84,8 @@ def parser_cfg_loader(mode='train', path=""):
 
 class box:
     def __init__(self, mode='train', path=''):
+        self.track_block_arg = ["weight"]
+        self.track_block_class = ["conv"]
         self.tag = None
         self.stb_counter = None
         self.pytorch_total_layers = None
@@ -395,7 +397,7 @@ class box:
         self.update_matrix(metrics_dict)
         # 更新梯度稳定度
         if self.stb_counter is not None and self.epoch_stage == "train":
-            matrix = self.stb_counter.compute_unstable_perlayer(['conv'], ['weight'])
+            matrix = self.stb_counter.compute_unstable_perlayer(self.track_block_class, self.track_block_arg)
             self.update_matrix(matrix)
 
     def update_matrix(self, metrics_dict):
