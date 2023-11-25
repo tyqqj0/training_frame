@@ -9,6 +9,7 @@ import json
 import os
 import shutil
 import time
+import warnings
 from functools import partial
 
 import SimpleITK as sitk
@@ -394,7 +395,7 @@ class box:
         self.update_matrix(metrics_dict)
         # 更新梯度稳定度
         if self.stb_counter is not None and self.epoch_stage == "train":
-            matrix = self.stb_counter.compute_unstable_perlayer(['conv'])
+            matrix = self.stb_counter.compute_unstable_perlayer(['conv'], ['weight'])
             self.update_matrix(matrix)
 
     def update_matrix(self, metrics_dict):
@@ -770,13 +771,15 @@ class GradientStats:
         print("self.hooks name: ", self.hooks)
         print_line('down')
 
-    def get_model_layers(self, n=None, include_bias=True):
+    def get_model_layers(self, n=None, end_with=None):
         if n is None:
             n = ["conv", "adn", "residual", "up", "down", "final"]
         if n == "all":
             # 拼接所有的weight和bias，并返回所有的模块名称
             return {name: params for name, params in self.model.state_dict().items() if
                     'weight' in name or 'bias' in name}
+        if end_with is None:
+            end_with = ["weight", "bias"]
         if isinstance(n, str):
             # 将字符串转换为列表
             n = [n]
@@ -789,11 +792,14 @@ class GradientStats:
             unique_names = set()
             for name in self.model.state_dict().keys():
                 for unit in track_units:
-                    if unit in name:
+                    if unit in name and name.endswith(tuple(end_with)):
                         # 找到单位在名称中的位置，然后取出前面的部分
                         pos = name.index(unit)
                         unique_names.add(name[:pos + len(unit)])
                         break
+            # 如果返回为空，则警告
+            if not unique_names:
+                warnings.warn("No layers found with the given units: {}".format(track_units))
             return unique_names
         else:
             raise ValueError(f"Unsupported type of n: {type(n)}")
@@ -805,14 +811,14 @@ class GradientStats:
 
         return hook
 
-    def compute_unstable_perlayer(self, n=None):
+    def compute_unstable_perlayer(self, n=None, end_with=None):
         # 计算每个参数的梯度不稳定性
         grad_instability = {name: [g.detach().cpu().numpy() for g in grads]
                             for name, grads in self.grads.items()}
 
         # 计算每个层的梯度不稳定性
         layer_instability = {}
-        for layer in self.get_model_layers(n):
+        for layer in self.get_model_layers(n, end_with):
             if self.mode == "sum":
                 layer_instability["stb_count_" + layer] = sum(
                     val for key, val in grad_instability.items() if key.startswith(layer))
