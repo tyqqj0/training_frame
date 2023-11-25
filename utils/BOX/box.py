@@ -394,7 +394,7 @@ class box:
         self.update_matrix(metrics_dict)
         # 更新梯度稳定度
         if self.stb_counter is not None and self.epoch_stage == "train":
-            matrix = self.stb_counter.compute_unstable_perlayer('conv')
+            matrix = self.stb_counter.compute_unstable_perlayer(['conv'])
             self.update_matrix(matrix)
 
     def update_matrix(self, metrics_dict):
