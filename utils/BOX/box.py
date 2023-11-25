@@ -775,6 +775,7 @@ class GradientStats:
         print_line('down')
 
     def get_model_layers(self, n=None, end_with=None):
+        print("model static keys", self.model.state_dict().keys())
         if n is None:
             n = ["conv", "adn", "residual", "up", "down", "final"]
         if n == "all":
@@ -827,13 +828,14 @@ class GradientStats:
         # 计算每个层的梯度不稳定性
         layer_instability = {}
         for layer in self.get_model_layers(n, end_with):
-            if self.mode == "sum":
-                layer_instability["stb_count_" + layer] = sum(
-                    val for key, val in grad_instability.items() if key.startswith(layer))
-            elif self.mode == "mean":
-                layer_values = [val for key, val in grad_instability.items() if key.startswith(layer)]
-                print("layer {} value shape: {}".format(layer, np.array(layer_values).shape))
-                layer_instability["stb_mean_" + layer] = np.mean(layer_values) if layer_values else 0
+            layer_values = np.array([val for key, val in grad_instability.items() if key.startswith(layer)])
+            print("layer {} value shape: {}".format(layer, np.array(layer_values).shape))
+            # 处理数据维度(1, 3, 256, 128, 3, 3, 3)
+            layer_values = layer_values.reshape(layer_values.shape[:4], -1)
+            # (1, 3, 256, 128, 27)
+            layer_values = layer_values.reshape(-1, 27)
+            #计算协方差矩阵
+            layer_instability["stb_mean_" + layer] = np.mean(layer_values) if layer_values else 0
 
         # 清空grads
         self.grads = {name: [] for name, _ in self.model.named_parameters()}

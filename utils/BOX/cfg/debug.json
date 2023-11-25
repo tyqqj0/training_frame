@@ -18,7 +18,7 @@
       "action": "store_true"
     },
     "exp_name": {
-      "default": "train",
+      "default": "debug",
       "type": "str",
       "help": "experiment name, ***must be set***"
     },
