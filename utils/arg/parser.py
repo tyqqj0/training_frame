@@ -20,11 +20,11 @@ class ConfigReader:
     """Reads a JSON file and returns a dictionary of arguments."""
 
     def __init__(self, config_file, namecf='None'):
-        '''
+        """
         只有创建默认的时候才会用到namecf
         :param config_file:
         :param namecf:
-        '''
+        """
         self.config_file = config_file
         if namecf == 'None':
             try:
@@ -34,6 +34,10 @@ class ConfigReader:
                     namecf = config_file.split('/')[-1].split('.')[0]
                 except:
                     namecf = config_file.split('\\')[-1].split('.')[0]
+
+        # 如果后缀为空，则添加.json
+        if '.' not in config_file:
+            config_file += '.json'
 
         if os.path.exists(config_file):
             with open(config_file, 'r') as f:

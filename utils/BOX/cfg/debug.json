@@ -11,12 +11,6 @@
       "type": "str",
       "help": "running mode"
     },
-    "amp": {
-      "default": true,
-      "type": null,
-      "help": "use amp for training",
-      "action": "store_true"
-    },
     "is_continue": {
       "default": false,
       "type": null,
@@ -24,7 +18,7 @@
       "action": "store_true"
     },
     "exp_name": {
-      "default": "debug",
+      "default": "train",
       "type": "str",
       "help": "experiment name, ***must be set***"
     },
@@ -54,7 +48,7 @@
       "help": "tag id, ***commanded to set***"
     },
     "val_frq": {
-      "default": 1,
+      "default": 5,
       "type": "int",
       "help": "val frequency"
     },
@@ -75,18 +69,18 @@
       "action": "store_true"
     },
     "log_frq": {
-      "default": 1,
+      "default": 50,
       "type": "int",
       "help": "log frequency"
     },
     "vis_3d": {
-      "default": true,
+      "default": false,
       "type": null,
       "help": "visualize 3d images",
       "action": "store_true"
     },
     "vis_3d_frq": {
-      "default": 1,
+      "default": 50,
       "type": "int",
       "help": "visualize 3d images frequency"
     },
