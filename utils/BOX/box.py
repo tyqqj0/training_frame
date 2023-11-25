@@ -251,8 +251,9 @@ class box:
         self.check_active_run()
         self.stb_counter = GradientStats(model)
         self.pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        self.pytorch_total_layers = len(self.stb_counter.get_model_layers())
-        print("layers:", len(self.stb_counter.get_model_layers()), self.stb_counter.get_model_layers())
+        self.pytorch_total_layers = len(self.stb_counter.get_model_layers(self.track_block_class, self.track_block_arg))
+        print("layers:", len(self.stb_counter.get_model_layers(self.track_block_class, self.track_block_arg)),
+              self.stb_counter.get_model_layers(self.track_block_class, self.track_block_arg))
 
     def save_vis_image(self):
         if self.vis_3d:
@@ -794,10 +795,15 @@ class GradientStats:
             unique_names = set()
             for name in self.model.state_dict().keys():
                 for unit in track_units:
-                    if unit in name and name.endswith(tuple(end_with)):
-                        # 找到单位在名称中的位置，然后取出前面的部分
-                        pos = name.index(unit)
-                        unique_names.add(name[:pos + len(unit)])
+                    if end_with is None:
+                        if unit in name:
+                            # 找到单位在名称中的位置，然后取出前面的部分
+                            pos = name.index(unit)
+                            unique_names.add(name[:pos + len(unit)])
+                    else:
+                        if unit in name and name.endswith(tuple(end_with)):
+                            unique_names.add(name)
+
                         break
             # 如果返回为空，则警告
             if not unique_names:
