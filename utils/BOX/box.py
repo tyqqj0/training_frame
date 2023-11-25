@@ -818,7 +818,7 @@ class GradientStats:
                     val for key, val in grad_instability.items() if key.startswith(layer))
             elif self.mode == "mean":
                 layer_values = [val for key, val in grad_instability.items() if key.startswith(layer)]
-                print("layer_values: ", layer_values)
+                print("layer {} values: {}".format(layer, layer_values))
                 layer_instability["stb_mean_" + layer] = np.mean(layer_values) if layer_values else 0
 
         # 清空grads
