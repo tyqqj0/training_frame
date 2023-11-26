@@ -1,32 +1,36 @@
 {
-    "train": [
-        {
-            "image": "D:/gkw/data/misguide_data/image/Normal002.mha",
-            "label": "D:/gkw/data/misguide_data/label/Normal002.mha"
-        },
-        {
-            "image": "D:/gkw/data/misguide_data/image/Normal003.mha",
-            "label": "D:/gkw/data/misguide_data/label/Normal003.mha"
-        },
-        {
-            "image": "D:/gkw/data/misguide_data/image/Normal004.mha",
-            "label": "D:/gkw/data/misguide_data/label/Normal004.mha"
-        }
-    ],
-    "val": [
-        {
-            "image": "D:/gkw/data/misguide_data/image/Normal002.mha",
-            "label": "D:/gkw/data/misguide_data/label/Normal002.mha"
-        },
-        {
-            "image": "D:/gkw/data/misguide_data/image/Normal003.mha",
-            "label": "D:/gkw/data/misguide_data/label/Normal003.mha"
-        }
-    ],
-    "vis": [
-        {
-            "image": "D:/gkw/data/vis/image/Normal074.mha",
-            "label": "D:/gkw/data/vis/label/Normal074.mha"
-        }
-    ]
+  "train": [
+    {
+      "image": "D:/gkw/data/misguide_data/image/Normal002.mha",
+      "label": "D:/gkw/data/misguide_data/label/Normal002.mha"
+    },
+    {
+      "image": "D:/gkw/data/misguide_data/image/Normal003.mha",
+      "label": "D:/gkw/data/misguide_data/label/Normal003.mha"
+    },
+    {
+      "image": "D:/gkw/data/misguide_data/image/Normal004.mha",
+      "label": "D:/gkw/data/misguide_data/label/Normal004.mha"
+    },
+    {
+      "image": "D:/gkw/data/vis/image/Normal074.mha",
+      "label": "D:/gkw/data/vis/label/Normal074.mha"
+    }
+  ],
+  "val": [
+    {
+      "image": "D:/gkw/data/misguide_data/image/Normal002.mha",
+      "label": "D:/gkw/data/misguide_data/label/Normal002.mha"
+    },
+    {
+      "image": "D:/gkw/data/misguide_data/image/Normal003.mha",
+      "label": "D:/gkw/data/misguide_data/label/Normal003.mha"
+    }
+  ],
+  "vis": [
+    {
+      "image": "D:/gkw/data/vis/image/Normal074.mha",
+      "label": "D:/gkw/data/vis/label/Normal074.mha"
+    }
+  ]
 }

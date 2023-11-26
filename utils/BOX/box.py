@@ -745,6 +745,17 @@ def get_latest_model_version(model_name):
 # def compute_unstable_perlayer(model):
 
 
+def count_layer_corr(layer_params):
+    # layer_params: (output, conv, batchsize)
+    # 计算所有核直接梯度的拨动相关性(output, output)
+    cov_layer_params = np.zeros(layer_params.shape[0], layer_params.shape[0])
+    for i in range(layer_params.shape[0]):
+        for j in range(layer_params.shape[0]):
+            cov_layer_params[i, j] = np.corrcoef(layer_params[i], layer_params[j]).abs().mean()
+            # cov_layer_params[i, j] = np.cov(layer_params[i], layer_params[j]).abs().sum()
+    return cov_layer_params
+
+
 class GradientStats:
     def __init__(self, model, mode='mean'):
         print_line('up')
@@ -825,6 +836,7 @@ class GradientStats:
         return hook
 
     def compute_unstable_perlayer(self, n=None, end_with=None):
+        time_cont = simple_timer()
         # 计算每个参数的梯度不稳定性
         grad_instability = {name: [g.detach().cpu().numpy() for g in grads]
                             for name, grads in self.grads.items()}
@@ -835,6 +847,7 @@ class GradientStats:
             layer_values = np.array([val for key, val in grad_instability.items() if key.startswith(layer)])
 
             # 处理数据维度(1, 3, 256, 128, 3, 3, 3)
+            # (多余维， batch_size, output_channel, input_channel, x, y, z)
             # 获取原始形状
             original_shape = layer_values.shape
 
@@ -843,6 +856,7 @@ class GradientStats:
 
             # 重塑数组
             layer_values = layer_values.reshape(new_shape)
+            layer_values = np.transpose(layer_values, (1, 2, 0))
             print("layer {} value shape: {}".format(layer, np.array(layer_values).shape))
 
             # 获取模型参数
@@ -851,14 +865,27 @@ class GradientStats:
             # layer_instability["stb_mean_" + layer] = np.mean(layer_values) if layer_values.size != 0 else 0
 
             # 获取模型参数的矩阵
-            layer_parames = np.array(
+            layer_params = np.array(
                 [param.data.cpu().numpy() for name, param in self.model.named_parameters() if layer in name])
             # for name, param in self.model.named_parameters():
             #     if layer in name:
-            print("layer {} param shape: {}".format(layer, layer_parames.shape))
+            print("layer {} param shape: {}".format(layer, layer_params.shape))
+
+            # 梯度的(output, conv, batchsize)->(output, conv * batchsize)
+
+            layer_values = layer_values.reshape(layer_values.shape[0], -1)
+
+            # 对参数和梯度分别求协方差
+            cov_layer_values = count_layer_corr(layer_values)
+            # cov_layer_params = np.cov(layer_params)
+            cov_layer_params = 1 - np.abs(np.corrcoef(layer_params))
+            # 两个相关性按位乘法
+            layer_instability[layer] = (cov_layer_values * cov_layer_params).mean
 
         # 清空grads
         self.grads = {name: [] for name, _ in self.model.named_parameters()}
+
+        print(time_cont)
 
         return layer_instability
 
@@ -908,6 +935,24 @@ def print_line(up_or_down, len=65):
     else:
         print('Invalid input')
         raise ValueError
+
+
+class simple_timer():
+    def __init__(self):
+        self.start_time = None
+        self.end_time = None
+        self.speed = None
+
+    def start(self):
+        self.start_time = time.time()
+
+    def end(self):
+        self.end_time = time.time()
+        self.speed = 1 / (self.end_time - self.start_time) * 3600
+        return self.speed
+
+    def __str__(self):
+        return str(self.start_time) + " " + str(self.end_time) + " " + str(self.speed)
 
 
 def text_in_box(text, length=65, center=True):
