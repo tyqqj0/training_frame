@@ -774,7 +774,7 @@ class GradientStats:
         print("self.hooks name: ", self.hooks)
         print_line('down')
 
-    def get_model_layers(self, n=None, end_with=None):
+    def get_model_layers(self, n=None, end_with=None, ignore=None):
         print("model static keys", self.model.state_dict().keys())
         if n is None:
             n = ["conv", "adn", "residual", "up", "down", "final"]
@@ -784,6 +784,8 @@ class GradientStats:
                     'weight' in name or 'bias' in name}
         if end_with is None:
             end_with = ["weight", "bias"]
+        if ignore is None:
+            ignore = ["adn"]
         if isinstance(n, str):
             # 将字符串转换为列表
             n = [n]
@@ -795,6 +797,8 @@ class GradientStats:
             track_units = n
             unique_names = set()
             for name in self.model.state_dict().keys():
+                if any(unit in name for unit in ignore):
+                    continue
                 for unit in track_units:
                     if end_with is None:
                         if unit in name:
@@ -829,13 +833,26 @@ class GradientStats:
         layer_instability = {}
         for layer in self.get_model_layers(n, end_with):
             layer_values = np.array([val for key, val in grad_instability.items() if key.startswith(layer)])
-            print("layer {} value shape: {}".format(layer, np.array(layer_values).shape))
+
             # 处理数据维度(1, 3, 256, 128, 3, 3, 3)
-            layer_values = layer_values.reshape(layer_values.shape[:4], -1)
-            # (1, 3, 256, 128, 27)
-            layer_values = layer_values.reshape(-1, 27)
-            #计算协方差矩阵
+            # 获取原始形状
+            original_shape = layer_values.shape
+
+            # 计算新的形状: 前三个维度的乘积, 后四个维度的乘积
+            new_shape = (np.prod(original_shape[:3]), np.prod(original_shape[3:]))
+
+            # 重塑数组
+            layer_values = layer_values.reshape(new_shape)
+            print("layer {} value shape: {}".format(layer, np.array(layer_values).shape))
+
+            # 获取模型参数
+
+            # 计算协方差矩阵
             layer_instability["stb_mean_" + layer] = np.mean(layer_values) if layer_values else 0
+
+            for name, param in self.model.named_parameters():
+                if layer in name:
+                    print("Parameter {} of layer {}: \n{}".format(name, layer, param.data))
 
         # 清空grads
         self.grads = {name: [] for name, _ in self.model.named_parameters()}
