@@ -839,7 +839,7 @@ class GradientStats:
             original_shape = layer_values.shape
 
             # 计算新的形状: 前三个维度的乘积, 后四个维度的乘积
-            new_shape = (np.prod(original_shape[:3]), np.prod(original_shape[3:]))
+            new_shape = (np.prod(original_shape[:2]), np.prod(original_shape[2:3]), np.prod(original_shape[3:]))
 
             # 重塑数组
             layer_values = layer_values.reshape(new_shape)
@@ -848,11 +848,14 @@ class GradientStats:
             # 获取模型参数
 
             # 计算协方差矩阵
-            layer_instability["stb_mean_" + layer] = np.mean(layer_values) if layer_values else 0
+            # layer_instability["stb_mean_" + layer] = np.mean(layer_values) if layer_values.size != 0 else 0
 
-            for name, param in self.model.named_parameters():
-                if layer in name:
-                    print("Parameter {} of layer {}: \n{}".format(name, layer, param.data))
+            # 获取模型参数的矩阵
+            layer_parames = np.array(
+                [param.data.cpu().numpy() for name, param in self.model.named_parameters() if layer in name])
+            # for name, param in self.model.named_parameters():
+            #     if layer in name:
+            print("layer {} param shape: {}".format(layer, layer_parames.shape))
 
         # 清空grads
         self.grads = {name: [] for name, _ in self.model.named_parameters()}
