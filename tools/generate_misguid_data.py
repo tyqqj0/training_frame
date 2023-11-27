@@ -57,7 +57,7 @@ msg_arg_dice067 = {
         "threshold": 0.54
     }
 }
-msg_arg_dice064 = {
+msg_arg_diceback = {
     "discribtion": "模拟后误导数据",
     "mask_generator_1": {
         "blur_size": 1,
@@ -72,7 +72,7 @@ msg_arg_dice064 = {
         "threshold": 0.5
     }
 }
-msg_arg_dice056 = {
+msg_arg_dicefront = {
     "discribtion": "模拟全误导数据",
     "mask_generator_1": {
         "blur_size": 1,

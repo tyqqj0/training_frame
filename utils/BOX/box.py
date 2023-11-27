@@ -900,7 +900,7 @@ class GradientStats:
             layer_instability[layer] = count_corr_mean(cov_layer_values * cov_layer_params)
             layer_instability['values_cor_' + layer] = count_corr_mean(cov_layer_values)
             layer_instability['params_cor_' + layer] = count_corr_mean(cov_layer_params)
-
+            print(layer_instability[layer])
             # 清空grads
             self.grads = {name: [] for name, _ in self.model.named_parameters()}
 
