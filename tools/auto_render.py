@@ -60,6 +60,7 @@ def generate_path_from_data_json(path, set=['train', 'val'], key=['label']):
     data_file = json.load(open(path, 'r'))
     for set_name in set:
         for file in data_file[set_name]:
+            print("file: ", file)
             if key is None:
                 path_list.append(file)
             elif any(k in file.keys() for k in key):
