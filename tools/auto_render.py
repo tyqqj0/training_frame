@@ -154,7 +154,7 @@ if __name__ == '__main__':
     path_list = generate_path_from_data_json(json_path, set=['train', 'val'], key=['label'])
     print(path_list)
     # 定义渲染工具
-    loader = render.vtkReader()
+    loader = render.mhaReader()
     mesher = render.npMesher()
     renderer = render.meshRenderer(opacity=0.85, save_path=path + '/' + run_name + '_3d')
     batch_render(path_list, loader, mesher, renderer)
