@@ -750,10 +750,18 @@ def count_layer_corr(layer_params):
     # 计算所有核直接梯度的拨动相关性(output, output)
     cov_layer_params = np.zeros((layer_params.shape[0], layer_params.shape[0]))
     for i in range(layer_params.shape[0]):
-        for j in range(layer_params.shape[0]):
-            cov_layer_params[i, j] = np.abs(np.corrcoef(layer_params[i], layer_params[j])).mean()
+        for j in range(0, i):
+            cov_layer_params[j, i] = count_corr_mean(np.abs(np.corrcoef(layer_params[j], layer_params[i])))
             # cov_layer_params[i, j] = np.cov(layer_params[i], layer_params[j]).abs().sum()
     return cov_layer_params
+
+
+def count_corr_mean(corrcoef):
+    # 计算相关性非对角线的均值. 因相关性对称，所以计算对角线上的一半
+    corrcoefmn = np.triu(corrcoef, 1)
+    corrcoefmn = corrcoefmn[corrcoefmn != 0]
+
+    return corrcoefmn.mean()
 
 
 class GradientStats:
@@ -889,7 +897,9 @@ class GradientStats:
             # cov_layer_params = np.cov(layer_params)
             cov_layer_params = 1 - np.abs(np.corrcoef(layer_params))
             # 两个相关性按位乘法
-            layer_instability[layer] = (cov_layer_values * cov_layer_params).mean()
+            layer_instability[layer] = count_corr_mean(cov_layer_values * cov_layer_params)
+            layer_instability['values_cor_' + layer] = count_corr_mean(cov_layer_values)
+            layer_instability['params_cor_' + layer] = count_corr_mean(cov_layer_params)
 
             # 清空grads
             self.grads = {name: [] for name, _ in self.model.named_parameters()}
