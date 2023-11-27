@@ -16,12 +16,14 @@ import os
 # import pandas as pd
 # import torchvision
 from urllib.parse import urlparse
+import json
 
 os.environ['MLFLOW_TRACKING_URI'] = '../mlruns'
 
 import utils.BOX as box
 
 import utils.BOX.render as render
+
 
 def generate_path(path, key=None):
     '''
@@ -44,6 +46,24 @@ def generate_path(path, key=None):
         for dir in dirs:
             path_list.extend(generate_path(os.path.join(root, dir), key))
 
+    return path_list
+
+
+def generate_path_from_data_json(path, set=['train', 'val'], key=['label']):
+    '''
+    从data.json中读取路径
+    :param path:
+    :param key:
+    :return:
+    '''
+    path_list = []
+    data_file = json.load(open(path, 'r'))
+    for set_name in set:
+        for file in data_file[set_name]:
+            if key is None:
+                path_list.append(file)
+            elif any(k in file for k in key):
+                path_list.append(file)
     return path_list
 
 
@@ -118,14 +138,20 @@ def batch_render(path_list, loader, mesher, renderer, save_path=None):
 
 
 if __name__ == '__main__':
+    run_name = 'vessel'
     # 尝试从mlflow中获取路径
-    run_id = 'b0fa3574f13244ba8ad9fc433226aef9'
-    path = None
-    if path is None:
-        path, run_name = get_artifact('train', run_id)
-    print(path)
-    # 生成路径列表
-    path_list = generate_path(path + "/vis_3d", key='output')
+    # run_id = 'b0fa3574f13244ba8ad9fc433226aef9'
+    # path = None
+    # if path is None:
+    #     path, run_name = get_artifact('train', run_id)
+    # print(path)
+    # # 生成路径列表
+    # path_list = generate_path(path + "/vis_3d", key='output')
+
+    # 从data.json中获取路径
+    path = '../data/'
+    json_path = path + run_name + '.json'
+    path_list = generate_path_from_data_json(json_path, set=['train', 'val'], key=['label'])
     print(path_list)
     # 定义渲染工具
     loader = render.vtkReader()
