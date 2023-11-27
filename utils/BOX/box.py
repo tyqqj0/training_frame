@@ -57,7 +57,10 @@ def parser_cfg_loader(mode='train', path=""):
         mode = os.path.join(".\\utils\\BOX\\cfg", mode + ".json")
     cfg = {}  # 默认的空配置
     if os.path.exists(mode):
-        print("loading config ", mode)
+
+        abs_path = os.path.abspath(mode).replace('\\', '/')
+        # print(f"Check the config at: file:///{abs_path}")
+        print(f"loading config file:///{abs_path}")
         config_reader = utils.arg.parser.ConfigReader(mode)
         cfg = config_reader.get_config()
         config_reader.check()

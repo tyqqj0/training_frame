@@ -154,7 +154,7 @@ def center_mesh(mesh):
 
 
 class meshRenderer:
-    def __init__(self, window_size=(1080, 1080), color=(1, 166 / 255, 0), camera_position_scale=(0, 0, 2),
+    def __init__(self, window_size=(1080, 1080), color=(1, 166 / 255, 0), camera_position_scale=(-4, 0, 0),
                  camera_focal_point=(0, 0, 0), opacity=1.0, save_path="./"):
         self.window_size = window_size
         self.color = color

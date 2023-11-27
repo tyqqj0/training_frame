@@ -79,12 +79,12 @@ msg_arg_dicefront = {
         "threshold": 0.35
     },
     "structures": {
-        "erosion": np.ones((2, 2, 2)),
-        "dilation": np.ones((4, 4, 4))
+        "erosion": np.ones((1, 1, 1)),
+        "dilation": np.ones((1, 1, 1))
     },
     "mask_generator_2": {
         "blur_size": 6,
-        "threshold": 0.65
+        "threshold": 0.5
     }
 }
 
@@ -307,7 +307,7 @@ def misguide_one_label(data, msg_arg=msg_arg_dice067, render=False, see_msk=Fals
     return data_no2, loss
 
 
-def add_misguide_to_dataset(input_folder, output_folder, msg_arg=msg_arg_dice067, render=False):
+def add_misguide_to_dataset(input_folder, output_folder, msg_arg=msg_arg_dice067, render=False, see_msk=False):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     losses = []
@@ -319,13 +319,14 @@ def add_misguide_to_dataset(input_folder, output_folder, msg_arg=msg_arg_dice067
 
                 # 转换为numpy数组，添加噪声，然后再转换回SimpleITK Image
 
-                img_noisy, loss = misguide_one_label(img, msg_arg=msg_arg, render=render, see_msk=False)
+                img_noisy, loss = misguide_one_label(img, msg_arg=msg_arg, render=render, see_msk=see_msk)
                 print("file {} loss: {}".format(file, loss))
                 # 将噪声图像写入到输出文件夹
                 output_file_path = os.path.join(output_folder, file)
                 load_one_image.save_one_label(img_noisy, output_file_path)
                 losses.append(loss)
     print("average loss:", np.mean(losses))
+    return np.mean(losses)
 
 
 if __name__ == "__main__":
@@ -335,4 +336,7 @@ if __name__ == "__main__":
     # args = parser.parse_args()
     input_path = "D:/gkw/data/misguide_data/label"
     output_path = "D:/gkw/data/misguide_data/label_dce_front"
-    add_misguide_to_dataset(input_path, output_path, msg_arg=msg_arg_dice056, render=True)
+    losses = add_misguide_to_dataset(input_path, output_path, msg_arg=msg_arg_dicefront, render=True, see_msk=True)
+    file_path = os.path.join(output_path, str(losses).replase('.', ''))
+    with open(file_path, 'w') as f:
+        pass

@@ -34,7 +34,7 @@
     },
     "max_epochs": {
       "help": "max number of training epochs",
-      "default": 6000,
+      "default": 500,
       "type": "int"
     },
     "batch_size": {
