@@ -62,7 +62,7 @@ def generate_path_from_data_json(path, set=['train', 'val'], key=['label']):
         for file in data_file[set_name]:
             if key is None:
                 path_list.append(file)
-            elif any(k in file for k in key):
+            elif any(k in file.keys() for k in key):
                 path_list.append(file)
     return path_list
 
