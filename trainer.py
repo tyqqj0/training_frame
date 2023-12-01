@@ -88,24 +88,15 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args, box=No
         else:
             run_loss.update(loss.item(), n=args.batch_size)
         box.update_in_epoch(step=idx, out=logits, target=target, stage='train')
-        # print(logits.shape, target.shape)
-        # if not args.test:
-        #     BOX.vis(epoch, args, data, logits, target)
-        # see_loss.update(logits < 0, target)
         if args.rank == 0:
-            print(
-                "Epoch {}/{} {}/{}".format(epoch + 1, args.max_epochs, idx + 1, len(loader)),
-                "loss: {:.4f}".format(run_loss.avg),
-                "time {:.2f}s".format(time.time() - start_time),
-                # "data: {}".format(data.shape)
-            )
+            print("Epoch {}/{} {}/{}".format(epoch + 1, args.max_epochs, idx + 1, len(loader)),
+                  "loss: {:.4f}".format(run_loss.avg), "time {:.2f}s".format(time.time() - start_time),
+                  # "data: {}".format(data.shape)
+                  )
         start_time = time.time()
     for param in model.parameters():
         param.grad = None
-    # 计算批次的平均值
-    # len是idx的最大值，是数据数除以batch_size然后向上取整
     box.end_epoch()
-    # see_loss.print_avr()
     return run_loss.avg
 
 
@@ -172,6 +163,28 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
     #     save_ckpt(model, epoch, args)
     box.end_epoch()
     return avg_acc
+
+
+def count_ngcm_epoch(model, loader, scaler, loss_func, rank=0, amp=True):
+    model.train()
+    for idx, batch_data in enumerate(loader):
+        if isinstance(batch_data, list):
+            data, target = batch_data
+        else:
+            data, target = batch_data["image"], batch_data["label"]
+        data, target = data.cuda(rank), target.cuda(rank)
+        for param in model.parameters():
+            param.grad = None
+        with autocast(enabled=amp):
+            logits = model(data)
+            loss = loss_func(logits, target)
+        if amp:
+            scaler.scale(loss).backward()
+        else:
+            loss.backward()
+
+    for param in model.parameters():
+        param.grad = None
 
 
 def save_checkpoint(model, epoch, args, filename="model.pt", best_acc=0, optimizer=None, scheduler=None):
@@ -246,11 +259,10 @@ def run_training(
             model, train_loader, optimizer, scaler=scaler, epoch=epoch, loss_func=loss_func, args=args, box=box
         )
         if args.rank == 0:
-            print(
-                "Final training  {}/{}".format(epoch + 1, args.max_epochs - 1),
-                "loss: {:.4f}".format(train_loss),
-                "time {:.2f}s".format(time.time() - epoch_time),
-            )
+            print("Final training  {}/{}".format(epoch + 1, args.max_epochs - 1), "loss: {:.4f}".format(train_loss),
+                  "time {:.2f}s".format(time.time() - epoch_time), )
+
+        # val
         if (epoch + 1) % args.val_every == 0:
             if args.distributed:
                 torch.distributed.barrier()
@@ -269,14 +281,23 @@ def run_training(
                 box=box
             )
             if args.rank == 0:
-                print(
-                    "Final validation  {}/{}".format(epoch + 1, args.max_epochs - 1),
-                    "acc",
-                    val_avg_acc,
-                    "time {:.2f}s".format(time.time() - epoch_time),
-                )
+                print("Final validation  {}/{}".format(epoch + 1, args.max_epochs - 1), "acc", val_avg_acc,
+                      "time {:.2f}s".format(time.time() - epoch_time), )
             if val_avg_acc > val_acc_max:
                 val_acc_max = val_avg_acc
+
+            # 梯度分析
+            if args.ngcm_val:
+                box.stb_counter.clear_grad()
+                count_ngcm_epoch(model, val_loader, scaler, loss_func, rank=args.rank, amp=args.amp)
+                matrix = box.stb_counter.compute_unstable_perlayer(box.track_block_class, box.track_block_arg)
+                box.update_matrix(matrix, epoch_stage="ngcm_val")
+            if args.ngcm_train:
+                box.stb_counter.clear_grad()
+                count_ngcm_epoch(model, train_loader, scaler, loss_func, rank=args.rank, amp=args.amp)
+                matrix = box.stb_counter.compute_unstable_perlayer(box.track_block_class, box.track_block_arg)
+                box.update_matrix(matrix, epoch_stage="ngcm_train")
+
         additional_matrics(model_inferer, val_loader, epoch, args.threshold)  # TODO: 这个写的不好看
         box.visualizes(model)
         box.save_model(model, epoch)

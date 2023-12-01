@@ -46,13 +46,18 @@ def get_a_set(data_dir):
         # 获取需要打乱的元素
         shuffle_part = datalist[:shuffle_amount]
 
+        # 随机选择需要打乱的元素
+        shuffle_indices = random.sample(range(len(datalist)), shuffle_amount)
+
+        # 提取需要打乱的标签
+        labels_to_shuffle = [datalist[i]['label'] for i in shuffle_indices]
+
         # 打乱标签
-        labels_to_shuffle = [item['label'] for item in shuffle_part]
         random.shuffle(labels_to_shuffle)
 
         # 将打乱后的标签重新赋值给数据列表的对应元素
-        for i in range(shuffle_amount):
-            datalist[i]['label'] = labels_to_shuffle[i]
+        for i, label in zip(shuffle_indices, labels_to_shuffle):
+            datalist[i]['label'] = label
 
     # 将数据列表保存为 JSON 文件
     # with open("datalist.json", "w") as f:
