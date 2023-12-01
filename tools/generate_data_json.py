@@ -59,7 +59,7 @@ if __name__ == "__main__":
         },
         "val": {
             "image": "D:\\gkw\\data\\misguide_data\\image",
-            "label": "D:\\gkw\\data\\misguide_data\\label",
+            "label": "D:\\gkw\\data\\misguide_data\\label_dce_new",
             "max_amount": 6
         },
         "vis": {
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     all_lists = get_dsets(dirstt)
 
     # print(all_lists)
-    with open("../data/vessel.json", "w") as dlj:
+    with open("../data/msg_new.json", "w") as dlj:
         json.dump(all_lists, dlj, indent=4)
 
 # get_a_set()

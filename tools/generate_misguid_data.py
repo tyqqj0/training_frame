@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from monai.losses import DiceLoss
 from scipy.ndimage import gaussian_filter, binary_erosion, binary_dilation
-from scipy.ndimage import generate_binary_structure
 from torch import tensor
 
 import utils.BOX.render as render
@@ -83,7 +82,7 @@ msg_arg_dicefront = {
         "dilation": np.ones((1, 1, 1))
     },
     "mask_generator_2": {
-        "blur_size": 6,
+        "blur_size": 2,
         "threshold": 0.5
     }
 }
@@ -302,7 +301,7 @@ def misguide_one_label(data, msg_arg=msg_arg_dice067, render=False, see_msk=Fals
     loss_func = dice()
     loss = loss_func(data, data_no2)
     if render:
-        print("loss:", loss)
+        # print("loss:", loss)
         simple_render(data_no2, tex=f"dice: {1 - loss:.4f}")
     return data_no2, loss
 
@@ -335,8 +334,8 @@ if __name__ == "__main__":
     # 解析出输入参数
     # args = parser.parse_args()
     input_path = "D:/gkw/data/misguide_data/label"
-    output_path = "D:/gkw/data/misguide_data/label_dce_front"
+    output_path = "D:/gkw/data/misguide_data/label_dce_new"
     losses = add_misguide_to_dataset(input_path, output_path, msg_arg=msg_arg_dicefront, render=True, see_msk=True)
-    file_path = os.path.join(output_path, str(losses).replase('.', ''))
+    file_path = os.path.join(output_path, str(losses).replace('.', ''))
     with open(file_path, 'w') as f:
         pass
