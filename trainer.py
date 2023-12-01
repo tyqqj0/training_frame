@@ -12,18 +12,18 @@
 import os
 import time
 
+import mlflow
 import numpy as np
 import torch
 import torch.nn.parallel
 import torch.utils.data.distributed
-from torch.cuda.amp import GradScaler, autocast
-from utils.utils import distributed_all_gather
-from skimage.measure import label, regionprops
-import mlflow
-import matplotlib.pyplot as plt
-from skimage import morphology, measure
-
 from monai.data import decollate_batch
+from skimage import morphology, measure
+from skimage.measure import label, regionprops
+from torch.cuda.amp import GradScaler, autocast
+
+from utils.BOX.box import text_in_box
+from utils.utils import distributed_all_gather
 
 
 def dice(x, y):
@@ -166,6 +166,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
 
 
 def count_ngcm_epoch(model, loader, scaler, loss_func, rank=0, amp=True):
+    text_in_box("count_ngcm_epoch")
     model.train()
     for idx, batch_data in enumerate(loader):
         if isinstance(batch_data, list):
