@@ -34,6 +34,26 @@ def get_a_set(data_dir):
     if "max_amount" in data_dir.keys():
         max_amount = data_dir["max_amount"]
         datalist = datalist[:max_amount]
+
+    if "shuffle_rate" in data_dir.keys():
+        shuffle_rate = data_dir["shuffle_rate"]
+        import random
+        # 随机打乱一定比例的标签
+
+        # 计算需要打乱的元素数量
+        shuffle_amount = int(len(datalist) * shuffle_rate)
+
+        # 获取需要打乱的元素
+        shuffle_part = datalist[:shuffle_amount]
+
+        # 打乱标签
+        labels_to_shuffle = [item['label'] for item in shuffle_part]
+        random.shuffle(labels_to_shuffle)
+
+        # 将打乱后的标签重新赋值给数据列表的对应元素
+        for i in range(shuffle_amount):
+            datalist[i]['label'] = labels_to_shuffle[i]
+
     # 将数据列表保存为 JSON 文件
     # with open("datalist.json", "w") as f:
     # json_set = json.dumps(datalist, indent=4)
@@ -55,12 +75,14 @@ if __name__ == "__main__":
     dirstt = {
         "train": {
             "image": "D:\\gkw\\data\\misguide_data\\image",
-            "label": "D:\\gkw\\data\\misguide_data\\label"
+            "label": "D:\\gkw\\data\\misguide_data\\label",
+            "shuffle_rate": 0.25
         },
         "val": {
             "image": "D:\\gkw\\data\\misguide_data\\image",
-            "label": "D:\\gkw\\data\\misguide_data\\label_dce_new",
-            "max_amount": 6
+            "label": "D:\\gkw\\data\\misguide_data\\label",
+
+            # "max_amount": 6
         },
         "vis": {
             "image": "D:\\gkw\\data\\vis\\image",
@@ -79,7 +101,7 @@ if __name__ == "__main__":
     all_lists = get_dsets(dirstt)
 
     # print(all_lists)
-    with open("../data/msg_new.json", "w") as dlj:
+    with open("../data/msg_new_t1.json", "w") as dlj:
         json.dump(all_lists, dlj, indent=4)
 
 # get_a_set()
