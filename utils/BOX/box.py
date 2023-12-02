@@ -26,6 +26,7 @@ import utils.BOX.evl
 import utils.BOX.vis
 import utils.arg.parser
 from utils.BOX.NGCM import GradientStats
+from utils.BOX.text import print_line, text_in_box
 
 # 用来规范化保存，日志，可视化等路径
 '''
@@ -779,31 +780,6 @@ class epoch_timer:
 # absadsasdasd
 # ...........................
 # ===========================
-def print_line(up_or_down, len=65):
-    if up_or_down == 'up' or up_or_down == 0:
-        print('=' * len)
-        print('.' * len)
-    elif up_or_down == 'down' or up_or_down == 1:
-        print('.' * len)
-        print('=' * len)
-    else:
-        print('Invalid input')
-        raise ValueError
 
-
-def text_in_box(text, length=65, center=True):
-    # Split the text into lines that are at most `length` characters long
-    lines = [text[i:i + length] for i in range(0, len(text), length)]
-
-    # Create the box border, with a width of `length` characters
-    up_border = '┏' + '━' * (length + 2) + '┓'
-    down_border = '┗' + '━' * (length + 2) + '┛'
-    # Create the box contents
-    contents = '\n'.join(['┃ ' + (line.center(length) if center else line.ljust(length)) + ' ┃' for line in lines])
-
-    # Combine the border and contents to create the final box
-    box = '\n'.join([up_border, contents, down_border])
-
-    return box
 
 # print(text_in_box('abcdes')) #666

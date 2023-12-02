@@ -22,7 +22,7 @@ from skimage import morphology, measure
 from skimage.measure import label, regionprops
 from torch.cuda.amp import GradScaler, autocast
 
-from utils.BOX.box import text_in_box
+from utils.BOX.text import text_in_box
 from utils.utils import distributed_all_gather
 
 
