@@ -98,7 +98,7 @@ if __name__ == "__main__":
     # train_dir = {
     #     "image": "D:\\gkw\\data\\misguide_data\\image",
     #     "label": "D:\\gkw\\data\\misguide_data\\label_dce064"
-    # }
+    # } 
     # val_dir = {
     #     "image": "D:\\gkw\\data\\misguide_data\\image",
     #     "label": "D:\\gkw\\data\\misguide_data\\label"

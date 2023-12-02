@@ -8,9 +8,11 @@ import time
 import warnings
 
 import numpy as np
-from torch import autocast
 
 from .text import print_line, text_in_box
+
+
+# from .box import print_line, text_in_box
 
 
 def count_layer_corr(layer_params):
