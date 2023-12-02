@@ -74,7 +74,7 @@ def main_worker(args, logrbox):
     # 获取数据读取器
     # TODO: 重写数据读取器
     loader, data_json = get_loader(data_cfg="./data/msg_new_t1.json",
-                                   loader_cfg='./utils/data_loader/loader_stbcnt_old.json')  # 可以指定数据配置
+                                   loader_cfg='./utils/data_loader/loader_stbcnt_old.json', include_ngcm=(args.ngcm_yc or args.ngcm_y))  # 可以指定数据配置
 
     # 设置模型的推理器
     # TODO: 这个不好看写法，改成自动的更好
@@ -120,6 +120,7 @@ def main_worker(args, logrbox):
             model=model,
             train_loader=loader[0],
             val_loader=loader[1],
+            ngcm_loader=loader[3:],
             optimizer=optimizer,
             loss_func=dice_loss,
             acc_func=dice_acc,

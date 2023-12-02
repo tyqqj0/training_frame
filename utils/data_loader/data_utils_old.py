@@ -122,7 +122,7 @@ class Sampler(torch.utils.data.Sampler):
 
 
 # 读取数据
-def get_loader(data_cfg=None, loader_cfg=None):
+def get_loader(data_cfg=None, loader_cfg=None, include_ngcm=False):
     if loader_cfg is None:
         loader_cfg = "./utils/data_loader/loader_old.json"
 
@@ -142,12 +142,12 @@ def get_loader(data_cfg=None, loader_cfg=None):
             raise ValueError("can not find data_cfg")
     # 如果是路径
     if data_cfg.endswith('.json'):
-        return inside_get_loader(args, data_cfg)
+        return inside_get_loader(args, data_cfg, include_ngcm=include_ngcm)
     else:
         raise ValueError("data_cfg must be a json file")
 
 
-def inside_get_loader(args, data_dir_json):
+def inside_get_loader(args, data_dir_json, include_ngcm=False):
     # create a training data loader
     # data_dir = args.data_dir
     datalist_json = data_dir_json
@@ -264,6 +264,32 @@ def inside_get_loader(args, data_dir_json):
             pin_memory=True,
             persistent_workers=True,
         )
+        if include_ngcm:
+            ngcm_yc_files = load_decathlon_datalist(datalist_json, True, "ngcm_yc")
+            ngcm_yc_ds = data.Dataset(data=ngcm_yc_files, transform=train_transform)
+            ngcm_yc_sampler = Sampler(ngcm_yc_ds, shuffle=False) if args.distributed else None
+            ngcm_yc_loader = data.DataLoader(
+                ngcm_yc_ds,
+                batch_size=1,
+                shuffle=False,
+                num_workers=args.workers,
+                sampler=ngcm_yc_sampler,
+                pin_memory=True,
+                persistent_workers=True,
+            )
+            ngcm_y_files = load_decathlon_datalist(datalist_json, True, "ngcm_y")
+            ngcm_y_ds = data.Dataset(data=ngcm_y_files, transform=train_transform)
+            ngcm_y_sampler = Sampler(ngcm_y_ds, shuffle=False) if args.distributed else None
+            ngcm_y_loader = data.DataLoader(
+                ngcm_y_ds,
+                batch_size=1,
+                shuffle=False,
+                num_workers=args.workers,
+                sampler=ngcm_y_sampler,
+                pin_memory=True,
+                persistent_workers=True,
+            )
+            loader = [train_loader, val_loader, vis_loader, ngcm_yc_loader, ngcm_y_loader], data_dir_json
         print(train_ds, val_ds, vis_ds)
         loader = [train_loader, val_loader, vis_loader], data_dir_json
 

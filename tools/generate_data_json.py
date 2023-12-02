@@ -87,12 +87,21 @@ if __name__ == "__main__":
             "image": "D:\\gkw\\data\\misguide_data\\image",
             "label": "D:\\gkw\\data\\misguide_data\\label",
 
-            # "max_amount": 6
+            "max_amount": 6
         },
         "vis": {
             "image": "D:\\gkw\\data\\vis\\image",
             "label": "D:\\gkw\\data\\vis\\label",
             "max_amount": 1
+        },
+        "ngcm_yc": {
+            "image": "D:\\gkw\\data\\misguide_data\\image",
+            "label": "D:\\gkw\\data\\misguide_data\\label",
+        },
+        "ngcm_y": {
+            "image": "D:\\gkw\\data\\misguide_data\\image",
+            "label": "D:\\gkw\\data\\misguide_data\\label",
+            "shuffle_rate": 0.25
         }
     }
     # train_dir = {

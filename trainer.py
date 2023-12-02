@@ -232,6 +232,7 @@ def run_training(
         model,
         train_loader,
         val_loader,
+        ngcm_loader,
         optimizer,
         loss_func,
         acc_func,
@@ -288,14 +289,14 @@ def run_training(
                 val_acc_max = val_avg_acc
 
             # 梯度分析
-            if args.ngcm_val:
+            if args.ngcm_yc:
                 box.stb_counter.clear_grad()
-                count_ngcm_epoch(model, val_loader, scaler, loss_func, rank=args.rank, amp=args.amp)
+                count_ngcm_epoch(model, ngcm_loader[0], scaler, loss_func, rank=args.rank, amp=args.amp)
                 matrix = box.stb_counter.compute_unstable_perlayer(box.track_block_class, box.track_block_arg)
                 box.update_matrix(matrix, epoch_stage="ngcm_val")
-            if args.ngcm_train:
+            if args.ngcm_y:
                 box.stb_counter.clear_grad()
-                count_ngcm_epoch(model, train_loader, scaler, loss_func, rank=args.rank, amp=args.amp)
+                count_ngcm_epoch(model, ngcm_loader[1], scaler, loss_func, rank=args.rank, amp=args.amp)
                 matrix = box.stb_counter.compute_unstable_perlayer(box.track_block_class, box.track_block_arg)
                 box.update_matrix(matrix, epoch_stage="ngcm_train")
 

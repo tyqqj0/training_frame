@@ -16,14 +16,14 @@
       "default": "",
       "type": "str"
     },
-    "ngcm_val": {
-      "help": "count ngcm for val loader data",
+    "ngcm_y*": {
+      "help": "count ngcm for correct loader data",
       "default": true,
       "type": null,
       "action": "store_true"
     },
-    "ngcm_train": {
-      "help": "count ngcm for train loader data",
+    "ngcm_y": {
+      "help": "count ngcm for using loader data",
       "default": false,
       "type": null,
       "action": "store_true"
