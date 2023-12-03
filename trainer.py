@@ -293,12 +293,12 @@ def run_training(
                 box.stb_counter.clear_grad()
                 count_ngcm_epoch(model, ngcm_loader[0], scaler, loss_func, rank=args.rank, amp=args.amp)
                 matrix = box.stb_counter.compute_unstable_perlayer(box.track_block_class, box.track_block_arg)
-                box.update_matrix(matrix, epoch_stage="ngcm_val")
+                box.update_matrix(matrix, epoch_stage="ngcm_yc")
             if args.ngcm_y:
                 box.stb_counter.clear_grad()
                 count_ngcm_epoch(model, ngcm_loader[1], scaler, loss_func, rank=args.rank, amp=args.amp)
                 matrix = box.stb_counter.compute_unstable_perlayer(box.track_block_class, box.track_block_arg)
-                box.update_matrix(matrix, epoch_stage="ngcm_train")
+                box.update_matrix(matrix, epoch_stage="ngcm_y")
 
         additional_matrics(model_inferer, val_loader, epoch, args.threshold)  # TODO: 这个写的不好看
         box.visualizes(model)

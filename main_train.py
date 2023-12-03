@@ -38,7 +38,7 @@ def main():
     # utils.arg.parser.save_parser_to_json(box.parser_cfg_loader()[1], "./box.json")
     # return
     args.amp = not args.noamp
-    logrbox = box.box(mode='debug')
+    logrbox = box.box(mode='train_msg')
     # logrbox.check_args()
     # print(logrbox.args)
     # _, parser = box.parser_cfg_loader()
@@ -46,7 +46,6 @@ def main():
     # 将框架参数同步到模型
     # return
     args.val_every = logrbox.get_frq()  # TODO: 这个不好看写法, 参数关系再想想
-
 
     if args.distributed:
         args.ngpus_per_node = torch.cuda.device_count()
@@ -74,7 +73,8 @@ def main_worker(args, logrbox):
     # 获取数据读取器
     # TODO: 重写数据读取器
     loader, data_json = get_loader(data_cfg="./data/msg_new_t1.json",
-                                   loader_cfg='./utils/data_loader/loader_stbcnt_old.json', include_ngcm=(args.ngcm_yc or args.ngcm_y))  # 可以指定数据配置
+                                   loader_cfg='./utils/data_loader/loader_stbcnt_old.json',
+                                   include_ngcm=True)  # 可以指定数据配置
 
     # 设置模型的推理器
     # TODO: 这个不好看写法，改成自动的更好

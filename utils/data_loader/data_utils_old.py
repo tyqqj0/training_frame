@@ -147,7 +147,7 @@ def get_loader(data_cfg=None, loader_cfg=None, include_ngcm=False):
         raise ValueError("data_cfg must be a json file")
 
 
-def inside_get_loader(args, data_dir_json, include_ngcm=False):
+def inside_get_loader(args, data_dir_json, include_ngcm=True):
     # create a training data loader
     # data_dir = args.data_dir
     datalist_json = data_dir_json
@@ -290,8 +290,9 @@ def inside_get_loader(args, data_dir_json, include_ngcm=False):
                 persistent_workers=True,
             )
             loader = [train_loader, val_loader, vis_loader, ngcm_yc_loader, ngcm_y_loader], data_dir_json
-        print(train_ds, val_ds, vis_ds)
-        loader = [train_loader, val_loader, vis_loader], data_dir_json
+        else:
+            print(train_ds, val_ds, vis_ds)
+            loader = [train_loader, val_loader, vis_loader], data_dir_json
 
     return loader
 

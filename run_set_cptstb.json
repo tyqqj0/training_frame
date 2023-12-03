@@ -16,7 +16,7 @@
       "default": "",
       "type": "str"
     },
-    "ngcm_y*": {
+    "ngcm_yc": {
       "help": "count ngcm for correct loader data",
       "default": true,
       "type": null,
