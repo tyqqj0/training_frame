@@ -38,6 +38,7 @@ def get_a_set(data_dir):
     if "shuffle_rate" in data_dir.keys():
         shuffle_rate = data_dir["shuffle_rate"]
         import random
+        random.seed(6)
         # 随机打乱一定比例的标签
 
         # 计算需要打乱的元素数量
@@ -81,7 +82,7 @@ if __name__ == "__main__":
         "train": {
             "image": "D:\\gkw\\data\\misguide_data\\image",
             "label": "D:\\gkw\\data\\misguide_data\\label",
-            "shuffle_rate": 0.25
+            "shuffle_rate": 0.40
         },
         "val": {
             "image": "D:\\gkw\\data\\misguide_data\\image",
@@ -101,7 +102,7 @@ if __name__ == "__main__":
         "ngcm_y": {
             "image": "D:\\gkw\\data\\misguide_data\\image",
             "label": "D:\\gkw\\data\\misguide_data\\label",
-            "shuffle_rate": 0.25
+            "shuffle_rate": 0.40
         }
     }
     # train_dir = {
@@ -115,7 +116,7 @@ if __name__ == "__main__":
     all_lists = get_dsets(dirstt)
 
     # print(all_lists)
-    with open("../data/msg_new_t1.json", "w") as dlj:
+    with open("../data/msg_new_t3.json", "w") as dlj:
         json.dump(all_lists, dlj, indent=4)
 
 # get_a_set()

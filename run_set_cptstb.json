@@ -66,7 +66,7 @@
     },
     "optim_name": {
       "help": "optimization algorithm",
-      "default": "sgd",
+      "default": "adamw",
       "type": "str"
     },
     "reg_weight": {

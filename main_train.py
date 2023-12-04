@@ -72,7 +72,7 @@ def main_worker(args, logrbox):
     logrbox.check_active_run()
     # 获取数据读取器
     # TODO: 重写数据读取器
-    loader, data_json = get_loader(data_cfg="./data/msg_new_t1.json",
+    loader, data_json = get_loader(data_cfg="./data/msg_new_t3.json",
                                    loader_cfg='./utils/data_loader/loader_stbcnt_old.json',
                                    include_ngcm=True)  # 可以指定数据配置
 
@@ -184,7 +184,7 @@ def get_model(model_name, logrbox, distributed=False, gpu=0, load_run_id=None, l
             dropout_rate=args.dropout_rate,
         )
     elif model_name == "unet":
-        model = UNet(spatial_dims=3, in_channels=1, out_channels=2, channels=(16, 32, 64, 128, 256, 512),
+        model = UNet(spatial_dims=3, in_channels=1, out_channels=2, channels=(16, 32, 64, 128),
                      strides=(2, 2, 2, 2, 2), num_res_units=2)
     else:
         raise ValueError("Unsupported model " + str(model_name))

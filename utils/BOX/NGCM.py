@@ -198,7 +198,7 @@ class simple_timer():
 
     def end(self):
         self.end_time = time.time()
-        self.speed = 1 / (self.end_time - self.start_time) * 3600
+        self.speed = 1 / ((self.end_time - self.start_time) * 3600 + 0.000001)
         return self.speed
 
     def __str__(self):
