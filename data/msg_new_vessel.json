@@ -1,0 +1,484 @@
+{
+    "train": [
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal002.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal002.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal003.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal003.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal004.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal004.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal006.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal006.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal008.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal008.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal009.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal009.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal010.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal010.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal011.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal011.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal012.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal012.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal017.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal017.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal018.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal018.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal020.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal020.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal021.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal021.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal022.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal022.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal023.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal023.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal025.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal025.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal026.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal026.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal027.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal027.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal033.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal033.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal034.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal034.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal037.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal037.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal040.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal040.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal042.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal042.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal043.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal043.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal044.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal044.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal045.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal045.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal047.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal047.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal054.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal054.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal056.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal056.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal058.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal058.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal060.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal060.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal063.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal063.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal064.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal064.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal070.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal070.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal071.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal071.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal074.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal074.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal086.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal086.mha"
+        }
+    ],
+    "val": [
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal002.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal002.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal003.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal003.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal004.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal004.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal006.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal006.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal008.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal008.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal009.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal009.mha"
+        }
+    ],
+    "vis": [
+        {
+            "image": "D:/gkw/data/vis/image/Normal074.mha",
+            "label": "D:/gkw/data/vis/label/Normal074.mha"
+        }
+    ],
+    "ngcm_yc": [
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal002.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal002.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal003.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal003.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal004.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal004.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal006.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal006.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal008.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal008.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal009.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal009.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal010.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal010.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal011.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal011.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal012.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal012.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal017.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal017.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal018.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal018.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal020.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal020.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal021.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal021.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal022.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal022.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal023.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal023.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal025.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal025.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal026.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal026.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal027.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal027.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal033.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal033.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal034.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal034.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal037.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal037.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal040.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal040.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal042.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal042.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal043.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal043.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal044.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal044.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal045.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal045.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal047.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal047.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal054.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal054.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal056.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal056.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal058.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal058.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal060.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal060.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal063.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal063.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal064.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal064.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal070.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal070.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal071.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal071.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal074.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal074.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal086.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal086.mha"
+        }
+    ],
+    "ngcm_y": [
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal002.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal043.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal003.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal003.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal004.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal002.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal006.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal006.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal008.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal044.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal009.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal018.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal010.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal010.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal011.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal011.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal012.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal012.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal017.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal017.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal018.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal020.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal020.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal086.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal021.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal021.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal022.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal022.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal023.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal023.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal025.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal026.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal026.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal063.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal027.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal027.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal033.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal008.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal034.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal034.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal037.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal037.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal040.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal009.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal042.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal042.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal043.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal004.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal044.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal040.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal045.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal045.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal047.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal047.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal054.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal054.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal056.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal056.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal058.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal058.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal060.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal060.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal063.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal025.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal064.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal064.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal070.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal070.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal071.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal071.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal074.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal074.mha"
+        },
+        {
+            "image": "D:/gkw/data/misguide_data/image/Normal086.mha",
+            "label": "D:/gkw/data/misguide_data/label/Normal033.mha"
+        }
+    ]
+}

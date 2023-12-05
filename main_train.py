@@ -72,7 +72,7 @@ def main_worker(args, logrbox):
     logrbox.check_active_run()
     # 获取数据读取器
     # TODO: 重写数据读取器
-    loader, data_json = get_loader(data_cfg="./data/msg_new_t3.json",
+    loader, data_json = get_loader(data_cfg="./data/msg_new_vessel.json",
                                    loader_cfg='./utils/data_loader/loader_stbcnt_old.json',
                                    include_ngcm=True)  # 可以指定数据配置
 

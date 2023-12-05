@@ -82,7 +82,7 @@ if __name__ == "__main__":
         "train": {
             "image": "D:\\gkw\\data\\misguide_data\\image",
             "label": "D:\\gkw\\data\\misguide_data\\label",
-            "shuffle_rate": 0.40
+            # "shuffle_rate": 0.40
         },
         "val": {
             "image": "D:\\gkw\\data\\misguide_data\\image",
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     all_lists = get_dsets(dirstt)
 
     # print(all_lists)
-    with open("../data/msg_new_t3.json", "w") as dlj:
+    with open("../data/msg_new_vessel.json", "w") as dlj:
         json.dump(all_lists, dlj, indent=4)
 
 # get_a_set()
