@@ -28,10 +28,10 @@ from utils.data_loader.data_utils_old import get_loader
 
 
 def main():
-    '''
+    """
     训练定义
     :return:
-    '''
+    """
     # 获取模型的参数
     args = utils.arg.get_args("./run_set_cptstb.json")
     # utils.arg.parser.save_parser_to_json(parser, "./UNTER.json")
@@ -115,7 +115,7 @@ def main_worker(args, logrbox):
     print(combined_dict)
     logrbox.add_tags(combined_dict)  # {"data_json": data_json, "args": args.__dict__}
     # logrbox.add_tags({"data_json": data_json})
-    with logrbox as run:
+    with logrbox:  # as run
         accuracy = run_training(  # 训练
             model=model,
             train_loader=loader[0],
@@ -151,10 +151,10 @@ def set_lrschedule(optimizer, start_epoch, max_epochs, lrschedule='warmup_cosine
     return scheduler
 
 
-def set_optim(model, optim_name="adamw", optim_lr=1e-4, reg_weight=1e-5, momentum=0.99):
+def set_optim(model, optim_name="adamW", optim_lr=1e-4, reg_weight=1e-5, momentum=0.99):
     if optim_name == "adam":
         optimizer = torch.optim.Adam(model.parameters(), lr=optim_lr, weight_decay=reg_weight)
-    elif optim_name == "adamw":
+    elif optim_name == "adamW":
         optimizer = torch.optim.AdamW(model.parameters(), lr=optim_lr, weight_decay=reg_weight)
     elif optim_name == "sgd":
         optimizer = torch.optim.SGD(
@@ -166,7 +166,7 @@ def set_optim(model, optim_name="adamw", optim_lr=1e-4, reg_weight=1e-5, momentu
     return optimizer
 
 
-def get_model(model_name, logrbox, distributed=False, gpu=0, load_run_id=None, load_model_name=None):
+def get_model(model_name, logrbox, load_run_id=None, load_model_name=None):
     if model_name == "unetr":
         args = utils.arg.get_args("./networks/UNETR/UNETR.json")
         model = UNETR(

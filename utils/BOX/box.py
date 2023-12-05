@@ -17,7 +17,7 @@ import mlflow.pytorch
 import numpy as np
 import torch
 from mlflow import MlflowClient
-from monai import __version__
+# from monai import __version__
 from monai.inferers import sliding_window_inference
 from monai.transforms import AsDiscrete
 from torch.cuda.amp import autocast
@@ -56,7 +56,7 @@ def parser_cfg_loader(mode='train', path=""):
         mode = path
     else:
         mode = os.path.join(".\\utils\\BOX\\cfg", mode + ".json")
-    cfg = {}  # 默认的空配置
+    # cfg = {}  # 默认的空配置
     if os.path.exists(mode):
 
         abs_path = os.path.abspath(mode).replace('\\', '/')
@@ -84,6 +84,13 @@ def parser_cfg_loader(mode='train', path=""):
 #     :return:
 #     """
 #     pass
+
+
+def check_active_run():
+    activate_run = mlflow.active_run()
+    if activate_run is not None:
+        print("There is a activate run:", activate_run)
+        raise RuntimeError("check here")
 
 
 class box:
@@ -233,7 +240,9 @@ class box:
         print("BOX load args: \n", json.dumps(vars(self.args), indent=4))
         return
 
-    def set_model_inferer(self, model, out_channels, vis_loader, inf_size=[96, 96, 96], threshold=0):
+    def set_model_inferer(self, model, out_channels, vis_loader, inf_size=None, threshold=0):
+        if inf_size is None:
+            inf_size = [96, 96, 96]
         print("set model inferer")
         self.threshold = threshold
         self.post_label = AsDiscrete(to_onehot=out_channels, n_classes=out_channels)  # 将数据onehot 应该是
@@ -252,7 +261,7 @@ class box:
         self.vis_loader = vis_loader
         # self.save_vis_image()
         print("inferer set complete")
-        self.check_active_run()
+        check_active_run()
         self.stb_counter = GradientStats(model)
         self.pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
         self.pytorch_total_layers = len(self.stb_counter.get_model_layers(self.track_block_class, self.track_block_arg))
@@ -264,14 +273,16 @@ class box:
             print("vis_3d is True, logging vis data image and label to mlflow")
             # 保存vis_loader的第一个batch的image和label到mlflow
             first_batch = None
-            try:
-                for i, adata in enumerate(self.vis_loader):
-                    first_batch = adata
-                    break
-                if first_batch is None:
-                    raise ValueError("first batch is None")
-            except:
+            # try:
+            for i, adata in enumerate(self.vis_loader):
                 first_batch = adata
+                break
+
+            # except:
+            #     # first_batch = adata
+            #     raise ValueError("first batch is None")
+            if first_batch is None:
+                raise ValueError("first batch is None")
             # 测试一次运行的
             if isinstance(first_batch, list):
                 first_batch, target = first_batch
@@ -288,24 +299,19 @@ class box:
             print("vis_3d image and label save complete")
         self.got_vis_image = True
 
-    def check_active_run(self):
-        activate_run = mlflow.active_run()
-        if activate_run is not None:
-            print("There is a activate run:", activate_run)
-            raise RuntimeError("check here")
-
     # 内部函数 标准化标签
     def _normalize_tag(self, tag=None):
         mlflow.set_tag("mlflow.user", self.args.user_name)
         mlflow.set_tag("mlflow.note.content", self.args.mode)
         mlflow.set_tag("mlflow.note.run_id", self.args.run_id if self.args.run_id is not None else self.run.info.run_id)
         # mlflow 参数
-        mlflow.log_param("monai_version", __version__)
+        # mlflow.log_param("monai_version", __version__)
         # 设置网络名称
-        try:
-            mlflow.log_param("model_name", self.model_name)
-        except:
-            pass
+        # try:
+        mlflow.log_param("model_name", self.model_name)
+        # 设置数据集名称
+        # except:
+        #     pass
         for k, v in vars(self.args).items():
             mlflow.log_param(k, v)
         if tag is not None:
@@ -315,7 +321,7 @@ class box:
     def start_epoch(self, loader, stage, epoch, use_vis=None):
         # self.epoch_start_time = time.time()
         if stage == 'train':
-            self.timer = epoch_timer()
+            self.timer = EpochTimer()
             self.timer.start(epoch)
             self.epoch = epoch
         print(text_in_box(f"BOX start {stage} epoch: " + str(epoch + 1)))
@@ -380,7 +386,6 @@ class box:
             # for metric, value in metrics_dict.items():
             #     mlflow.log_metric(metric, value, step=self.epoch)
 
-
         else:
             # test目前打算不在这里做
             print("Invalid stage")
@@ -401,7 +406,6 @@ class box:
         metrics_dict = self.evler.end_epoch()
         print_line('down')
         self.update_matrix(metrics_dict)
-
 
     def update_matrix(self, metrics_dict, epoch_stage=None):
         if epoch_stage is None:
@@ -462,14 +466,16 @@ class box:
         # 如果data是一整个loader, 找到第一个batch
 
         first_batch = None
-        try:
-            for i, adata in enumerate(data):
-                first_batch = adata
-                break
-            if first_batch is None:
-                raise ValueError("first batch is None")
-        except:
-            first_batch = data
+        # try:
+        for i, adata in enumerate(data):
+            first_batch = adata
+            break
+
+        # except:
+        # first_batch = data
+        # raise ValueError("first batch is None")
+        if first_batch is None:
+            raise ValueError("first batch is None")
         # 测试一次运行的
         with torch.no_grad():
             if isinstance(first_batch, list):
@@ -497,11 +503,11 @@ class box:
         # output = self.post_pred(logits)
         output = logits > threshold
         target = self.post_label(target.squeeze(0))
-        if 0:
-            print("data shape:", data.shape)
-            print("logits shape:", logits.shape)
-            print("output shape:", output.shape)
-            print("target shape:", target.shape)
+        # if 0:
+        #     print("data shape:", data.shape)
+        #     print("logits shape:", logits.shape)
+        #     print("output shape:", output.shape)
+        #     print("target shape:", target.shape)
 
         # 处理数据到三维张量
         # (batch, channel, x, y, z) -> (x, y, z)
@@ -566,7 +572,7 @@ class box:
             mlflow.pytorch.log_model(model, filename + "-best", registered_model_name=filename + "_best",
                                      signature=self.signatures)
 
-    def load_model(self, model, set_model_name="unetr", load_run_id=None, dict=True, model_version='latest',
+    def load_model(self, model, set_model_name="unetr", load_run_id=None, dict_mode=True, model_version='latest',
                    best_model=True, load_model_name=None):
         print("loading model from :", load_run_id if load_run_id is not None else "None")
         self.model_name = set_model_name
@@ -614,11 +620,11 @@ class box:
         print(f"Loaded model: {model_name}, version: {model_version}, epoch: {epoch}, accuracy: {accuracy}")
 
         # 将加载的模型参数复制到当前模型
-        if dict:
+        if dict_mode:
             model.load_state_dict(loaded_model.state_dict())
         else:
             model = loaded_model
-        self.check_active_run()
+        check_active_run()
         # 将self的是否有可视化的图像标志设为真
         self.got_vis_image = True
 
@@ -631,7 +637,7 @@ class box:
         # global args
         # 出示服务器
         print("mlflow server: ", mlflow.get_tracking_uri())
-        self.check_active_run()
+        check_active_run()
 
         # 模拟参数
         run_name = None
@@ -694,23 +700,23 @@ def upload_cache(cache_loc, artifact_path=None):
         raise ValueError(f"{cache_loc} is neither a file nor a directory")
 
 
-def stop_all_runs():
-    # 创建一个 MlflowClient 实例
-    client = MlflowClient()
-    # 获取所有的运行
-    experiment_id = client.get_experiment_by_name("traint1").experiment_id
-    runs = client.search_runs(experiment_ids=[experiment_id])
-    print("experiment_id:", experiment_id)
-    # 遍历所有的运行
-    for run in runs:
-        # 如果运行还在进行中，结束它
-        try:
-            if run.info.status == "RUNNING":
-                print("run_id:", run.info.run_id)
-                client.set_terminated(run.info.run_id)
-        except mlflow.exceptions.MissingConfigException:
-            print(f"Skipping run with missing meta.yaml file: {run.info.run_id}")
-    # check_run()
+# def stop_all_runs():
+#     # 创建一个 MlflowClient 实例
+#     client = MlflowClient()
+#     # 获取所有的运行
+#     experiment_id = client.get_experiment_by_name("traint1").experiment_id
+#     runs = client.search_runs(experiment_ids=[experiment_id])
+#     print("experiment_id:", experiment_id)
+#     # 遍历所有的运行
+#     for run in runs:
+#         # 如果运行还在进行中，结束它
+#         try:
+#             if run.info.status == "RUNNING":
+#                 print("run_id:", run.info.run_id)
+#                 client.set_terminated(run.info.run_id)
+#         except mlflow.exceptions.MissingConfigException:
+#             print(f"Skipping run with missing meta.yaml file: {run.info.run_id}")
+# check_run()
 
 
 def check_run():
@@ -746,10 +752,10 @@ def get_latest_model_version(model_name):
         return None
 
 
-# def compute_unstable_perlayer(model):
+# def compute_unstable_per_layer(model):
 
 
-class epoch_timer:
+class EpochTimer:
     def __init__(self):
         self.start_time = None
         self.end_time = None
@@ -773,7 +779,6 @@ class epoch_timer:
               "epoch/hour")
         print_line('down')
         return self.speed
-
 
 # ===========================
 # ...........................

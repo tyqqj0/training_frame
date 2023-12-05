@@ -78,6 +78,7 @@ class GradientStats:
         if isinstance(n, str):
             # 将字符串转换为列表
             n = [n]
+            return set(['.'.join(name.split('.')[0:n]) for name in self.model.state_dict().keys()])
         elif isinstance(n, int):
             # 返回指定数量的模块名称
             return set(['.'.join(name.split('.')[0:n]) for name in self.model.state_dict().keys()])
@@ -114,7 +115,7 @@ class GradientStats:
         return hook
 
     def compute_unstable_perlayer(self, n=None, end_with=None):
-        time_cont = simple_timer()
+        time_cont = SimpleTimer()
         time_cont.start()
         # 计算每个参数的梯度不稳定性
         grad_instability = {name: [g.detach().cpu().numpy() for g in grads]
@@ -186,7 +187,7 @@ class GradientStats:
             hook.remove()
 
 
-class simple_timer():
+class SimpleTimer:
     def __init__(self):
         self.start_time = None
         self.end_time = None
@@ -204,9 +205,7 @@ class simple_timer():
     def __str__(self):
         self.end()
         run_time = self.end_time - self.start_time
-        timett = []
-        timett.append("Run Time: " + str(run_time))
-        timett.append("Speed: " + str(self.speed))
+        timett = ["Run Time: " + str(run_time), "Speed: " + str(self.speed)]
         self.start()
         return "\n".join(timett)
-        return timett
+        # return timett

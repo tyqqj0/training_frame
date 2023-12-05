@@ -14,7 +14,7 @@
     },
     "batch_size": {
       "help": "number of batch size",
-      "default": 1,
+      "default": 6,
       "type": "int"
     },
     "distributed": {

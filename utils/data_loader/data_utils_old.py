@@ -10,25 +10,23 @@
 # limitations under the License.
 
 import math
-import os
-import re
-import json
 
 import numpy as np
 import torch
-import utils.arg.parser as psr
-
-# import monai
-
 from monai import data, transforms
 from monai.data import load_decathlon_datalist
 
-input_train = [
-    {
-        'image': 'D:/Data/brains/train/image1/Normal002.mha',
-        'label': 'D:/Data/brains/train/label1/Normal002-MRA.mha'
-    }
-]
+import utils.arg.parser as psr
+
+
+# import monai
+
+# input_train = [
+#     {
+#         'image': 'D:/Data/brains/train/image1/Normal002.mha',
+#         'label': 'D:/Data/brains/train/label1/Normal002-MRA.mha'
+#     }
+# ]
 
 
 # def generate_list(data_root='D:Data/brains/train/', check=False, amt=-1):
